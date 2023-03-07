@@ -6,9 +6,10 @@
     "main": "./lib/index.js",
     "scripts": {
         "build": "rm -rf tsconfig.tsbuildinfo ./lib && tsc --build --verbose",
-        "run": "tsc --watch --preserveWatchOutput",
-        "clean": "rm -rf tsconfig.tsbuildinfo ./lib",
-        "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js --ext .jsx --ext tsx --ext ts . --quiet --cache"
+        "clean": "rm -rf tsconfig.tsbuildinfo ./lib ./node_modules",
+        "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js,.jsx,.tsx,.ts . --quiet --cache",
+        "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js,.jsx,.tsx,.ts . --quiet --fix --cache",
+        "check-types": "tsc"
     },
     "devDependencies": {
         "@babel/eslint-parser": "^7.19.1",
