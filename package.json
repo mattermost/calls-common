@@ -1,0 +1,22 @@
+{
+    "name": "@calls/common",
+    "version": "0.12.0",
+    "description": "Common code shared between calls webapp, desktop, and mobile.",
+    "license": "MIT",
+    "main": "./lib/index.js",
+    "scripts": {
+        "build": "rm -rf tsconfig.tsbuildinfo ./lib && tsc --build --verbose",
+        "run": "tsc --watch --preserveWatchOutput",
+        "clean": "rm -rf tsconfig.tsbuildinfo ./lib",
+        "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js --ext .jsx --ext tsx --ext ts . --quiet --cache"
+    },
+    "devDependencies": {
+        "@babel/eslint-parser": "^7.19.1",
+        "@types/node": "^18.14.6",
+        "@typescript-eslint/eslint-plugin": "^5.54.1",
+        "eslint": "^8.35.0",
+        "eslint-import-resolver-typescript": "^3.5.3",
+        "eslint-plugin-import": "^2.27.5",
+        "webpack": "^5.75.0"
+    }
+}
