@@ -4,8 +4,7 @@ import { RTCPeerConfig } from './types';
 export declare class RTCPeer extends EventEmitter {
     private pc;
     private readonly senders;
-    private readonly logDebug;
-    private readonly logErr;
+    private readonly logger;
     private readonly webrtc;
     private makingOffer;
     private candidates;

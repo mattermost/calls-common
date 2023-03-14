@@ -67,10 +67,10 @@ export type CallHostChangedData = {
 } & BaseData
 
 export type CallRecordingState = {
-    init_at: number,
-    start_at: number,
-    end_at: number,
-    err?: string,
+    init_at: number;
+    start_at: number;
+    end_at: number;
+    err?: string;
 } & BaseData
 
 export type CallRecordingStateData = {
@@ -105,76 +105,82 @@ export type WebsocketEventData =
 
 export type RTCStats = {
     [key: number]: {
-        local: RTCLocalStats,
-        remote: RTCRemoteStats,
+        local: RTCLocalStats;
+        remote: RTCRemoteStats;
     }
 }
 
 export type RTCPeerConfig = {
-    iceServers: RTCIceServer[],
-    logDebug: (...args: unknown[]) => void;
-    logErr: (...args: unknown[]) => void;
+    iceServers: RTCIceServer[];
+    logger: Logger;
     webrtc?: Webrtc;
 }
 
 export interface Webrtc {
-    MediaStream: typeof MediaStream,
-    RTCPeerConnection: typeof RTCPeerConnection,
+    MediaStream: typeof MediaStream;
+    RTCPeerConnection: typeof RTCPeerConnection;
+}
+
+export interface Logger {
+    logDebug: (...args: unknown[]) => void;
+    logErr: (...args: unknown[]) => void;
+    logWarn: (...args: unknown[]) => void;
+    logInfo: (...args: unknown[]) => void;
 }
 
 export type RTCLocalStats = {
-    in?: RTCLocalInboundStats,
-    out?: RTCLocalOutboundStats,
+    in?: RTCLocalInboundStats;
+    out?: RTCLocalOutboundStats;
 }
 
 export type RTCRemoteStats = {
-    in?: RTCRemoteInboundStats,
-    out?: RTCRemoteOutboundStats,
+    in?: RTCRemoteInboundStats;
+    out?: RTCRemoteOutboundStats;
 }
 
 export type RTCLocalInboundStats = {
-    kind: string,
-    packetsReceived: number,
-    bytesReceived: number,
-    packetsLost: number,
-    packetsDiscarded: number,
-    jitter: number,
-    jitterBufferDelay: number,
+    kind: string;
+    packetsReceived: number;
+    bytesReceived: number;
+    packetsLost: number;
+    packetsDiscarded: number;
+    jitter: number;
+    jitterBufferDelay: number;
 }
 
 export type RTCLocalOutboundStats = {
-    kind: string,
-    packetsSent: number,
-    bytesSent: number,
-    retransmittedPacketsSent: number,
-    retransmittedBytesSent: number,
-    nackCount: number,
-    targetBitrate: number,
+    kind: string;
+    packetsSent: number;
+    bytesSent: number;
+    retransmittedPacketsSent: number;
+    retransmittedBytesSent: number;
+    nackCount: number;
+    targetBitrate: number;
 }
 
 export type RTCRemoteInboundStats = {
-    kind: string,
-    packetsLost: number,
-    fractionLost: number,
-    jitter: number,
+    kind: string;
+    packetsLost: number;
+    fractionLost: number;
+    jitter: number;
 }
 
 export type RTCRemoteOutboundStats = {
-    kind: string,
-    packetsSent: number,
-    bytesSent: number,
+    kind: string;
+    packetsSent: number;
+    bytesSent: number;
 }
 
 export type CallsConfig = {
-    ICEServers: string[],
-    ICEServersConfigs: RTCIceServer[],
-    DefaultEnabled: boolean,
-    MaxCallParticipants: number,
-    NeedsTURNCredentials: boolean,
-    AllowScreenSharing: boolean,
-    EnableRecordings: boolean,
-    MaxRecordingDuration: number,
-    sku_short_name: string,
+    ICEServers: string[];
+    ICEServersConfigs: RTCIceServer[];
+    DefaultEnabled: boolean;
+    MaxCallParticipants: number;
+    NeedsTURNCredentials: boolean;
+    AllowScreenSharing: boolean;
+    EnableRecordings: boolean;
+    MaxRecordingDuration: number;
+    sku_short_name: string;
 }
 
 export const CallsConfigDefault: CallsConfig = {
@@ -190,39 +196,39 @@ export const CallsConfigDefault: CallsConfig = {
 };
 
 export type ChannelState = {
-    id: string,
-    enabled?: boolean,
+    id: string;
+    enabled?: boolean;
 }
 
 export type CallsClientConfig = {
-    wsURL: string,
-    authToken?: string,
-    iceServers: RTCIceServer[],
+    wsURL: string;
+    authToken?: string;
+    iceServers: RTCIceServer[];
 }
 
 export type AudioDevices = {
-    inputs: MediaDeviceInfo[],
-    outputs: MediaDeviceInfo[],
+    inputs: MediaDeviceInfo[];
+    outputs: MediaDeviceInfo[];
 }
 
 export type TrackInfo = {
-    id: string,
-    streamID: string,
-    kind: string,
-    label: string,
-    enabled: boolean,
-    readyState: MediaStreamTrackState,
+    id: string;
+    streamID: string;
+    kind: string;
+    label: string;
+    enabled: boolean;
+    readyState: MediaStreamTrackState;
 }
 
 export type CallsClientStats = {
-    initTime: number,
-    callID: string,
-    tracksInfo: TrackInfo[],
-    rtcStats: RTCStats | null,
+    initTime: number;
+    callID: string;
+    tracksInfo: TrackInfo[];
+    rtcStats: RTCStats | null;
 }
 
 export type CallsUserPreferences = {
-    joinSoundParticipantsThreshold: number,
+    joinSoundParticipantsThreshold: number;
 }
 
 export const CallsUserPreferencesDefault = {
@@ -235,20 +241,20 @@ export enum CallAlertType {
 }
 
 export type CallAlertConfig = {
-    type: CallAlertType,
-    icon: string,
-    bannerText: string,
-    tooltipText: string,
-    tooltipSubtext: string,
+    type: CallAlertType;
+    icon: string;
+    bannerText: string;
+    tooltipText: string;
+    tooltipSubtext: string;
 }
 
 export type CallAlertState = {
-    active: boolean,
-    show: boolean,
+    active: boolean;
+    show: boolean;
 }
 
 export type CallAlertStates = {
-    [key: string]: CallAlertState,
+    [key: string]: CallAlertState;
 }
 
 export const CallAlertStatesDefault = {

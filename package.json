@@ -2,7 +2,6 @@
     "name": "@calls/common",
     "version": "0.12.0",
     "description": "Common code shared between calls webapp, desktop, and mobile.",
-    "license": "MIT",
     "main": "./lib/index.js",
     "scripts": {
         "build": "tsc --build --verbose",
