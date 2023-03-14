@@ -7,10 +7,67 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
   pull_request:
 
-permissions:
-  contents: read
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  plugin-ci:
-    uses: mattermost/actions-workflows/.github/workflows/plugin-ci.yml@main
-    secrets: inherit
+  check-lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        id: setup_node
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+      - name: ci/get-node-modules
+        run: |
+          make node_modules
+      - name: ci/lint
+        run: |
+          npm run lint
+  check-type:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        id: setup_node
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+      - name: ci/get-node-modules
+        run: |
+          make node_modules
+      - name: ci/lint
+        run: |
+          npm run check-types
+  check-build:
+    runs-on: ubuntu-22.04
+    needs: [check-lint, check-type]
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        id: setup_node
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+      - name: ci/get-node-modules
+        run: |
+          make node_modules
+      - name: ci/check-build
+        run: |
+          mkdir -p tmp
+          tsc --outDir tmp
+          diff -r lib tmp
+          rm -rf tmp
+

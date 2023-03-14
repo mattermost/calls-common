@@ -1,14 +1,14 @@
-.PHONY: build dist test run clean stop check-style fix-style run-unit emojis help update-dependencies
+.PHONY: lint fix check-types node_modules build clean
 
 # The CI environment variable is set automatically in CircleCI and GitLab CI
 CI ?= false
 
-check-style: node_modules ## Checks JS file for ESLint conformity
+lint: node_modules ## Checks JS file for ESLint conformity
 	@echo Checking for style guide compliance
 
 	npm run lint
 
-fix-style: node_modules ## Fix JS file ESLint issues
+fix: node_modules ## Fix JS file ESLint issues
 	@echo Fixing lint issues to follow style guide
 
 	npm run fix
@@ -42,9 +42,3 @@ clean: ## Clears cached; deletes node_modules and dist directories
 	npm run clean
 
 	rm -f .eslintcache
-
-update-dependencies: # Updates the dependencies
-	npm update
-	npm audit fix
-	@echo Automatic dependency update complete.
-	@echo You should manually inspect changes to package.json and pin exact versions of packages where appropriate.

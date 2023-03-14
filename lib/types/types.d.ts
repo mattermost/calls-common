@@ -36,6 +36,7 @@ export type EmojiData = {
     name: string;
     skin?: string;
     unified: string;
+    literal: string;
 } & BaseData;
 export type UserReactionData = {
     user_id: string;

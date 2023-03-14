@@ -5,7 +5,7 @@
     "license": "MIT",
     "main": "./lib/index.js",
     "scripts": {
-        "build": "rm -rf tsconfig.tsbuildinfo ./lib && tsc --build --verbose",
+        "build": "tsc --build --verbose",
         "clean": "rm -rf tsconfig.tsbuildinfo ./lib ./node_modules",
         "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js,.jsx,.tsx,.ts . --quiet --cache",
         "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ignore-pattern lib --ext .js,.jsx,.tsx,.ts . --quiet --fix --cache",
