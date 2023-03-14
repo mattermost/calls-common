@@ -5,6 +5,8 @@
 // Websocket Types
 //
 
+import {MessageDescriptor} from 'react-intl';
+
 export type EmptyData = Record<string, never>;
 
 export type BaseData = {
@@ -51,8 +53,8 @@ export type UserRaiseUnraiseHandData = {
 
 export type EmojiData = {
     name: string;
-    skin?: string;
     unified: string;
+    skin?: string;
     literal?: string;
 } & BaseData
 
@@ -71,6 +73,7 @@ export type CallRecordingState = {
     start_at: number;
     end_at: number;
     err?: string;
+    error_at?: number;
 } & BaseData
 
 export type CallRecordingStateData = {
@@ -243,9 +246,9 @@ export enum CallAlertType {
 export type CallAlertConfig = {
     type: CallAlertType;
     icon: string;
-    bannerText: string;
-    tooltipText: string;
-    tooltipSubtext: string;
+    bannerText: MessageDescriptor;
+    tooltipText: MessageDescriptor;
+    tooltipSubtext: MessageDescriptor;
 }
 
 export type CallAlertState = {

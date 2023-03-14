@@ -1,3 +1,4 @@
+import { MessageDescriptor } from 'react-intl';
 export type EmptyData = Record<string, never>;
 export type BaseData = {
     channelID?: string;
@@ -34,8 +35,8 @@ export type UserRaiseUnraiseHandData = {
 } & BaseData;
 export type EmojiData = {
     name: string;
-    skin?: string;
     unified: string;
+    skin?: string;
     literal?: string;
 } & BaseData;
 export type UserReactionData = {
@@ -51,6 +52,7 @@ export type CallRecordingState = {
     start_at: number;
     end_at: number;
     err?: string;
+    error_at?: number;
 } & BaseData;
 export type CallRecordingStateData = {
     recState: CallRecordingState;
@@ -175,9 +177,9 @@ export declare enum CallAlertType {
 export type CallAlertConfig = {
     type: CallAlertType;
     icon: string;
-    bannerText: string;
-    tooltipText: string;
-    tooltipSubtext: string;
+    bannerText: MessageDescriptor;
+    tooltipText: MessageDescriptor;
+    tooltipSubtext: MessageDescriptor;
 };
 export type CallAlertState = {
     active: boolean;
