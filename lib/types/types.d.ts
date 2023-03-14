@@ -47,8 +47,6 @@ export type CallHostChangedData = {
     hostID: string;
 } & BaseData;
 export type CallRecordingState = {
-    init_at: number;
-    start_at: number;
     end_at: number;
     err?: string;
 } & BaseData;
