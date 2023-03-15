@@ -1,4 +1,3 @@
-import { MessageDescriptor } from 'react-intl';
 export type EmptyData = Record<string, never>;
 export type BaseData = {
     channelID?: string;
@@ -136,78 +135,6 @@ export type CallsConfig = {
     MaxRecordingDuration: number;
     sku_short_name: string;
 };
-export declare const CallsConfigDefault: CallsConfig;
-export type ChannelState = {
-    id: string;
-    enabled?: boolean;
-};
-export type CallsClientConfig = {
-    wsURL: string;
-    authToken?: string;
-    iceServers: RTCIceServer[];
-};
-export type AudioDevices = {
-    inputs: MediaDeviceInfo[];
-    outputs: MediaDeviceInfo[];
-};
-export type TrackInfo = {
-    id: string;
-    streamID: string;
-    kind: string;
-    label: string;
-    enabled: boolean;
-    readyState: MediaStreamTrackState;
-};
-export type CallsClientStats = {
-    initTime: number;
-    callID: string;
-    tracksInfo: TrackInfo[];
-    rtcStats: RTCStats | null;
-};
-export type CallsUserPreferences = {
-    joinSoundParticipantsThreshold: number;
-};
-export declare const CallsUserPreferencesDefault: {
-    joinSoundParticipantsThreshold: number;
-};
-export declare enum CallAlertType {
-    Error = "error",
-    Warning = "warning"
-}
-export type CallAlertConfig = {
-    type: CallAlertType;
-    icon: string;
-    bannerText: MessageDescriptor;
-    tooltipText: MessageDescriptor;
-    tooltipSubtext: MessageDescriptor;
-};
-export type CallAlertState = {
-    active: boolean;
-    show: boolean;
-};
-export type CallAlertStates = {
-    [key: string]: CallAlertState;
-};
-export declare const CallAlertStatesDefault: {
-    missingAudioInput: {
-        active: boolean;
-        show: boolean;
-    };
-    missingAudioInputPermissions: {
-        active: boolean;
-        show: boolean;
-    };
-    missingScreenPermissions: {
-        active: boolean;
-        show: boolean;
-    };
-};
 export type Reaction = UserReactionData & {
     displayName: string;
-};
-export type CapturerSource = {
-    id: string;
-    name: string;
-    thumbnailURL: string;
-    display_id: string;
 };
