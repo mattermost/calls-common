@@ -51,8 +51,8 @@ export type UserRaiseUnraiseHandData = {
 
 export type EmojiData = {
     name: string;
-    skin?: string;
     unified: string;
+    skin?: string;
     literal?: string;
 } & BaseData
 
@@ -71,6 +71,7 @@ export type CallRecordingState = {
     start_at: number;
     end_at: number;
     err?: string;
+    error_at?: number;
 } & BaseData
 
 export type CallRecordingStateData = {
@@ -183,102 +184,6 @@ export type CallsConfig = {
     sku_short_name: string;
 }
 
-export const CallsConfigDefault: CallsConfig = {
-    ICEServers: [],
-    ICEServersConfigs: [],
-    DefaultEnabled: false,
-    MaxCallParticipants: 0,
-    NeedsTURNCredentials: false,
-    AllowScreenSharing: true,
-    EnableRecordings: false,
-    MaxRecordingDuration: 60,
-    sku_short_name: '',
-};
-
-export type ChannelState = {
-    id: string;
-    enabled?: boolean;
-}
-
-export type CallsClientConfig = {
-    wsURL: string;
-    authToken?: string;
-    iceServers: RTCIceServer[];
-}
-
-export type AudioDevices = {
-    inputs: MediaDeviceInfo[];
-    outputs: MediaDeviceInfo[];
-}
-
-export type TrackInfo = {
-    id: string;
-    streamID: string;
-    kind: string;
-    label: string;
-    enabled: boolean;
-    readyState: MediaStreamTrackState;
-}
-
-export type CallsClientStats = {
-    initTime: number;
-    callID: string;
-    tracksInfo: TrackInfo[];
-    rtcStats: RTCStats | null;
-}
-
-export type CallsUserPreferences = {
-    joinSoundParticipantsThreshold: number;
-}
-
-export const CallsUserPreferencesDefault = {
-    joinSoundParticipantsThreshold: 8,
-};
-
-export enum CallAlertType {
-    Error = 'error',
-    Warning = 'warning',
-}
-
-export type CallAlertConfig = {
-    type: CallAlertType;
-    icon: string;
-    bannerText: string;
-    tooltipText: string;
-    tooltipSubtext: string;
-}
-
-export type CallAlertState = {
-    active: boolean;
-    show: boolean;
-}
-
-export type CallAlertStates = {
-    [key: string]: CallAlertState;
-}
-
-export const CallAlertStatesDefault = {
-    missingAudioInput: {
-        active: false,
-        show: false,
-    },
-    missingAudioInputPermissions: {
-        active: false,
-        show: false,
-    },
-    missingScreenPermissions: {
-        active: false,
-        show: false,
-    },
-};
-
 export type Reaction = UserReactionData & {
     displayName: string;
-}
-
-export type CapturerSource = {
-    id: string;
-    name: string;
-    thumbnailURL: string;
-    display_id: string;
 }
