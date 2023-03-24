@@ -113,7 +113,7 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onTrack(ev: RTCTrackEvent) {
-        this.emit('stream', new MediaStream([ev.track]));
+        this.emit('stream', new this.webrtc.MediaStream([ev.track]));
     }
 
     public async signal(data: string) {
