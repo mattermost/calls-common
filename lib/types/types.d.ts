@@ -66,64 +66,12 @@ export type UserState = {
     reaction?: Reaction;
 } & BaseData;
 export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState;
-export type RTCStats = {
-    [key: number]: {
-        local: RTCLocalStats;
-        remote: RTCRemoteStats;
-    };
-};
-export type RTCPeerConfig = {
-    iceServers: RTCIceServer[];
-    logger: Logger;
-    webrtc?: Webrtc;
-};
-export interface Webrtc {
-    MediaStream: typeof MediaStream;
-    RTCPeerConnection: typeof RTCPeerConnection;
-}
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;
     logWarn: (...args: unknown[]) => void;
     logInfo: (...args: unknown[]) => void;
 }
-export type RTCLocalStats = {
-    in?: RTCLocalInboundStats;
-    out?: RTCLocalOutboundStats;
-};
-export type RTCRemoteStats = {
-    in?: RTCRemoteInboundStats;
-    out?: RTCRemoteOutboundStats;
-};
-export type RTCLocalInboundStats = {
-    kind: string;
-    packetsReceived: number;
-    bytesReceived: number;
-    packetsLost: number;
-    packetsDiscarded: number;
-    jitter: number;
-    jitterBufferDelay: number;
-};
-export type RTCLocalOutboundStats = {
-    kind: string;
-    packetsSent: number;
-    bytesSent: number;
-    retransmittedPacketsSent: number;
-    retransmittedBytesSent: number;
-    nackCount: number;
-    targetBitrate: number;
-};
-export type RTCRemoteInboundStats = {
-    kind: string;
-    packetsLost: number;
-    fractionLost: number;
-    jitter: number;
-};
-export type RTCRemoteOutboundStats = {
-    kind: string;
-    packetsSent: number;
-    bytesSent: number;
-};
 export type CallsConfig = {
     ICEServers: string[];
     ICEServersConfigs: RTCIceServer[];
