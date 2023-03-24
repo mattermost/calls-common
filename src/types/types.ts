@@ -183,6 +183,7 @@ export type CallsConfig = {
     EnableRecordings: boolean;
     MaxRecordingDuration: number;
     sku_short_name: string;
+    EnableSimulcast: boolean;
 }
 
 export type Reaction = UserReactionData & {
