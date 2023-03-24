@@ -174,7 +174,7 @@ export class RTCPeer extends EventEmitter {
             // TODO: check whether track is coming from screenshare when we
             // start supporting video.
 
-            if (!this.config.simulcast || isFirefox()) {
+            if (isFirefox()) {
                 sender = await this.pc.addTrack(track, stream!);
 
                 await sender.setParameters({
@@ -183,7 +183,7 @@ export class RTCPeer extends EventEmitter {
             } else {
                 const trx = this.pc.addTransceiver(track, {
                     direction: 'sendonly',
-                    sendEncodings: DefaultSimulcastScreenEncodings,
+                    sendEncodings: this.config.simulcast ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
                     streams: [stream!],
                 });
                 sender = trx.sender;
