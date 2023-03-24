@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { RTCMonitorConfig } from './types';
-export default class RTCMonitor extends EventEmitter {
+export declare class RTCMonitor extends EventEmitter {
     private peer;
     private logger;
     private cfg;

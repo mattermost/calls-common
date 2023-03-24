@@ -26,7 +26,7 @@ type CallQualityStats = {
     avgLatency?: number,
 };
 
-export default class RTCMonitor extends EventEmitter {
+export class RTCMonitor extends EventEmitter {
     private peer: RTCPeer;
     private logger: Logger;
     private cfg: RTCMonitorConfig;
