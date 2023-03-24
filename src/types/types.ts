@@ -115,6 +115,7 @@ export type RTCPeerConfig = {
     iceServers: RTCIceServer[];
     logger: Logger;
     webrtc?: Webrtc;
+    simulcast?: boolean;
 }
 
 export interface Webrtc {
@@ -187,3 +188,4 @@ export type CallsConfig = {
 export type Reaction = UserReactionData & {
     displayName: string;
 }
+

@@ -76,6 +76,7 @@ export type RTCPeerConfig = {
     iceServers: RTCIceServer[];
     logger: Logger;
     webrtc?: Webrtc;
+    simulcast?: boolean;
 };
 export interface Webrtc {
     MediaStream: typeof MediaStream;
