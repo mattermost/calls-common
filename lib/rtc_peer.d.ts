@@ -4,13 +4,18 @@ import { RTCPeerConfig } from './types';
 export declare class RTCPeer extends EventEmitter {
     private config;
     private pc;
+    private dc;
     private readonly senders;
     private readonly logger;
     private readonly webrtc;
+    private pingIntervalID;
+    private rtt;
     private makingOffer;
     private candidates;
     connected: boolean;
     constructor(config: RTCPeerConfig);
+    private initPingHandler;
+    getRTT(): number;
     private onICECandidate;
     private onConnectionStateChange;
     private onICEConnectionStateChange;
