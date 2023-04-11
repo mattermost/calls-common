@@ -2,6 +2,7 @@
 import { EventEmitter } from 'events';
 import { RTCPeerConfig } from './types';
 export declare class RTCPeer extends EventEmitter {
+    private config;
     private pc;
     private dc;
     private readonly senders;

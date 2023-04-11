@@ -11,6 +11,7 @@ export type RTCPeerConfig = {
     iceServers: RTCIceServer[];
     logger: Logger;
     webrtc?: WebRTC;
+    simulcast?: boolean;
 }
 
 export type RTCStats = {

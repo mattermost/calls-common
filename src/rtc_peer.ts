@@ -5,7 +5,26 @@ import {Logger, RTCPeerConfig, WebRTC} from './types';
 const rtcConnFailedErr = new Error('rtc connection failed');
 const pingIntervalMs = 1000;
 
+enum SimulcastLevel {
+    High = 'h',
+    Medium = 'm',
+    Low = 'l',
+}
+
+const DefaultSimulcastScreenEncodings = [
+    {rid: SimulcastLevel.Low, maxBitrate: 500 * 1000, maxFramerate: 5, scaleResolutionDownBy: 1.0} as RTCRtpEncodingParameters,
+    {rid: SimulcastLevel.High, maxBitrate: 2500 * 1000, maxFramerate: 20, scaleResolutionDownBy: 1.0} as RTCRtpEncodingParameters,
+];
+const FallbackScreenEncodings = [
+    {maxBitrate: 1000 * 1000, maxFramerate: 10, scaleResolutionDownBy: 1.0} as RTCRtpEncodingParameters,
+];
+
+function isFirefox() {
+    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+}
+
 export class RTCPeer extends EventEmitter {
+    private config: RTCPeerConfig;
     private pc: RTCPeerConnection | null;
     private dc: RTCDataChannel;
     private readonly senders: { [key: string]: RTCRtpSender };
@@ -22,6 +41,7 @@ export class RTCPeer extends EventEmitter {
 
     constructor(config: RTCPeerConfig) {
         super();
+        this.config = config;
         this.logger = config.logger;
 
         // use the provided webrtc methods (for mobile), or the build in lib.dom methods (for webapp)
@@ -125,11 +145,7 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onTrack(ev: RTCTrackEvent) {
-        if (ev.streams.length === 0) {
-            this.emit('stream', new this.webrtc.MediaStream([ev.track]));
-            return;
-        }
-        this.emit('stream', ev.streams[0]);
+        this.emit('stream', new this.webrtc.MediaStream([ev.track]));
     }
 
     public async signal(data: string) {
@@ -180,10 +196,35 @@ export class RTCPeer extends EventEmitter {
         if (!this.pc) {
             throw new Error('peer has been destroyed');
         }
-        const sender = await this.pc.addTrack(track, stream);
-        if (sender) {
-            this.senders[track.id] = sender;
+
+        let sender : RTCRtpSender;
+        if (track.kind === 'video') {
+            // Simulcast
+
+            // NOTE: Unfortunately Firefox cannot simulcast screen sharing tracks
+            // properly (https://bugzilla.mozilla.org/show_bug.cgi?id=1692873).
+            // TODO: check whether track is coming from screenshare when we
+            // start supporting video.
+
+            if (isFirefox()) {
+                sender = await this.pc.addTrack(track, stream!);
+
+                await sender.setParameters({
+                    encodings: FallbackScreenEncodings,
+                } as RTCRtpSendParameters);
+            } else {
+                const trx = this.pc.addTransceiver(track, {
+                    direction: 'sendonly',
+                    sendEncodings: this.config.simulcast ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
+                    streams: [stream!],
+                });
+                sender = trx.sender;
+            }
+        } else {
+            sender = await this.pc.addTrack(track, stream);
         }
+
+        this.senders[track.id] = sender;
     }
 
     public addStream(stream: MediaStream) {
@@ -234,3 +275,4 @@ export class RTCPeer extends EventEmitter {
         clearInterval(this.pingIntervalID);
     }
 }
+
