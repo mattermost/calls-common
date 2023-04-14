@@ -25,6 +25,7 @@ export declare class RTCPeer extends EventEmitter {
     addTrack(track: MediaStreamTrack, stream: MediaStream): Promise<void>;
     addStream(stream: MediaStream): void;
     replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
+    removeTrack(trackID: string): void;
     getStats(): Promise<RTCStatsReport>;
     destroy(): void;
 }
