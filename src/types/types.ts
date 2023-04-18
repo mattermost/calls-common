@@ -82,7 +82,7 @@ export type CallRecordingStateData = {
 export type UserState = {
     channelID?: string;
     id: string;
-    voice: boolean;
+    voice?: boolean;
     unmuted: boolean;
     raised_hand: number;
     reaction?: Reaction;
@@ -126,5 +126,29 @@ export type CallsConfig = {
 
 export type Reaction = UserReactionData & {
     displayName: string;
+}
+
+export type CallUserState = {
+    unmuted: boolean;
+    raised_hand: number;
+}
+
+export type CallState = {
+    id: string;
+    start_at: number;
+    users: string[];
+    states?: CallUserState[],
+    thread_id: string;
+    post_id: string;
+    screen_sharing_id: string;
+    owner_id: string;
+    host_id: string;
+    recording?: CallRecordingState;
+}
+
+export type CallChannelState = {
+    enabled: boolean;
+    channel_id: string;
+    call: CallState;
 }
 
