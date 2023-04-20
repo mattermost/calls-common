@@ -108,3 +108,13 @@ export type CallChannelState = {
     channel_id: string;
     call: CallState;
 };
+export type ColorRGB = {
+    r: number;
+    g: number;
+    b: number;
+};
+export type ColorHSL = {
+    h: number;
+    s: number;
+    l: number;
+};
