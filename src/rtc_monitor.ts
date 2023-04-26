@@ -1,10 +1,10 @@
 import {EventEmitter} from 'events';
 
 import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCCandidatePairStats} from './types';
-
-import {parseRTCStats, newRTCLocalInboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
-
+import {newRTCLocalInboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
 import {RTCPeer} from './rtc_peer';
+
+export const mosThreshold = 3.5;
 
 type LocalInboundStatsMap = {
     [key: string]: RTCLocalInboundStats,
