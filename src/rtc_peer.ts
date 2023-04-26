@@ -2,6 +2,8 @@ import {EventEmitter} from 'events';
 
 import {Logger, RTCPeerConfig, WebRTC} from './types';
 
+import {isFirefox, getFirefoxVersion} from './utils';
+
 const rtcConnFailedErr = new Error('rtc connection failed');
 const pingIntervalMs = 1000;
 
@@ -18,10 +20,6 @@ const DefaultSimulcastScreenEncodings = [
 const FallbackScreenEncodings = [
     {maxBitrate: 1000 * 1000, maxFramerate: 10, scaleResolutionDownBy: 1.0} as RTCRtpEncodingParameters,
 ];
-
-function isFirefox() {
-    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-}
 
 export class RTCPeer extends EventEmitter {
     private config: RTCPeerConfig;
@@ -145,6 +143,20 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onTrack(ev: RTCTrackEvent) {
+        if (this.pc) {
+            // If we are trying to reuse an existing transceiver to receive
+            // the track we may need to activate it back.
+            for (const t of this.pc.getTransceivers()) {
+                if (t.receiver && t.receiver.track === ev.track) {
+                    if (t.direction === 'inactive') {
+                        this.logger.logDebug('reactivating transceiver for track');
+                        t.direction = 'recvonly';
+                    }
+                    break;
+                }
+            }
+        }
+
         this.emit('stream', new this.webrtc.MediaStream([ev.track]));
     }
 
@@ -206,16 +218,27 @@ export class RTCPeer extends EventEmitter {
             // TODO: check whether track is coming from screenshare when we
             // start supporting video.
 
-            if (isFirefox()) {
+            if (isFirefox() && getFirefoxVersion() < 110) {
+                // DEPRECATED: we should consider removing this as sendEncodings
+                // has been supported since v110.
                 sender = await this.pc.addTrack(track, stream!);
+                const params = await sender.getParameters();
+                params.encodings = FallbackScreenEncodings;
+                await sender.setParameters(params);
 
-                await sender.setParameters({
-                    encodings: FallbackScreenEncodings,
-                } as RTCRtpSendParameters);
+                // We need to explicitly set the transceiver direction or Firefox
+                // will default to sendrecv which will cause problems when removing the track.
+                for (const trx of this.pc.getTransceivers()) {
+                    if (trx.sender === sender) {
+                        this.logger.logDebug('setting transceiver direction to sendonly');
+                        trx.direction = 'sendonly';
+                        break;
+                    }
+                }
             } else {
                 const trx = this.pc.addTransceiver(track, {
                     direction: 'sendonly',
-                    sendEncodings: this.config.simulcast ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
+                    sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
                     streams: [stream!],
                 });
                 sender = trx.sender;
@@ -243,6 +266,19 @@ export class RTCPeer extends EventEmitter {
             this.senders[newTrack.id] = sender;
         }
         sender.replaceTrack(newTrack);
+    }
+
+    public removeTrack(trackID: string) {
+        if (!this.pc) {
+            throw new Error('peer has been destroyed');
+        }
+
+        const sender = this.senders[trackID];
+        if (!sender) {
+            throw new Error('sender for track not found');
+        }
+
+        this.pc.removeTrack(sender);
     }
 
     public getStats() {
