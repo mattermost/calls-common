@@ -1,4 +1,5 @@
 import {EventEmitter} from 'events';
+
 import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCCandidatePairStats} from './types';
 import {newRTCLocalInboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
 import {RTCPeer} from './rtc_peer';
