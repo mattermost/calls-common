@@ -83,6 +83,7 @@ export type CallsConfig = {
     MaxRecordingDuration: number;
     sku_short_name: string;
     EnableSimulcast: boolean;
+    EnableRTCD: boolean;
 };
 export type Reaction = UserReactionData & {
     displayName: string;
