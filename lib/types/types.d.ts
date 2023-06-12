@@ -102,7 +102,7 @@ export type CallState = {
     owner_id: string;
     host_id: string;
     recording?: CallRecordingState;
-    dismissed_notification: string[];
+    dismissed_notification?: string[];
 };
 export type CallChannelState = {
     enabled: boolean;
