@@ -65,7 +65,11 @@ export type UserState = {
     raised_hand: number;
     reaction?: Reaction;
 } & BaseData;
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState;
+export type UserDismissedNotification = {
+    userID: string;
+    callID: string;
+};
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;

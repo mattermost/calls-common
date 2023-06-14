@@ -88,6 +88,11 @@ export type UserState = {
     reaction?: Reaction;
 } & BaseData
 
+export type UserDismissedNotification = {
+    userID: string;
+    callID: string;
+}
+
 export type WebsocketEventData =
     EmptyData
     | HelloData
@@ -102,7 +107,8 @@ export type WebsocketEventData =
     | UserReactionData
     | CallHostChangedData
     | CallRecordingStateData
-    | UserState;
+    | UserState
+    | UserDismissedNotification;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
