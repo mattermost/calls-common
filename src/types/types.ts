@@ -90,6 +90,11 @@ export type UserState = {
     reaction?: Reaction;
 } & BaseData
 
+export type UserDismissedNotification = {
+    userID: string;
+    callID: string;
+}
+
 export type WebsocketEventData =
     EmptyData
     | HelloData
@@ -104,7 +109,8 @@ export type WebsocketEventData =
     | UserReactionData
     | CallHostChangedData
     | CallRecordingStateData
-    | UserState;
+    | UserState
+    | UserDismissedNotification;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
@@ -146,7 +152,7 @@ export type CallState = {
     owner_id: string;
     host_id: string;
     recording?: CallRecordingState;
-    dismissed_notification?: string[];
+    dismissed_notification?: { [userID: string]: boolean };
 }
 
 export type CallChannelState = {
