@@ -11,6 +11,7 @@ export type CallStartData = {
     channelID: string;
     start_at: number;
     thread_id: string;
+    post_id: string;
     owner_id: string;
     host_id: string;
 } & BaseData;
