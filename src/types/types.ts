@@ -17,9 +17,11 @@ export type HelloData = {
 } & BaseData
 
 export type CallStartData = {
+    id: string;
     channelID: string;
     start_at: number;
     thread_id: string;
+    post_id: string;
     owner_id: string;
     host_id: string;
 } & BaseData
@@ -128,6 +130,7 @@ export type CallsConfig = {
     MaxRecordingDuration: number;
     sku_short_name: string;
     EnableSimulcast: boolean;
+    EnableRinging: boolean;
 }
 
 export type Reaction = UserReactionData & {
