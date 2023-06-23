@@ -7,6 +7,7 @@ export type HelloData = {
     server_version: string;
 } & BaseData;
 export type CallStartData = {
+    id: string;
     channelID: string;
     start_at: number;
     thread_id: string;

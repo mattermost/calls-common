@@ -17,6 +17,7 @@ export type HelloData = {
 } & BaseData
 
 export type CallStartData = {
+    id: string;
     channelID: string;
     start_at: number;
     thread_id: string;
