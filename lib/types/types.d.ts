@@ -71,7 +71,7 @@ export type UserDismissedNotification = {
     userID: string;
     callID: string;
 };
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification;
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;
@@ -112,6 +112,10 @@ export type CallState = {
     dismissed_notification?: {
         [userID: string]: boolean;
     };
+};
+export type CallStateData = {
+    channel_id: string;
+    call: string;
 };
 export type CallChannelState = {
     enabled: boolean;
