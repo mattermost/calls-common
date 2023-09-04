@@ -145,11 +145,16 @@ export type Reaction = UserReactionData & {
     displayName: string;
 }
 
-export type CallUserState = {
+export type SessionState = {
     session_id: string;
     user_id: string;
     unmuted: boolean;
     raised_hand: number;
+}
+
+export type UserSessionState = SessionState & {
+    voice?: boolean;
+    reaction?: Reaction;
 }
 
 export type CallState = {
@@ -160,9 +165,9 @@ export type CallState = {
     users: string[];
 
     // DEPRECATED since Calls v0.20.0 - MM v9.1
-    states?: CallUserState[],
+    states?: SessionState[],
 
-    sessions: CallUserState[],
+    sessions: SessionState[],
     thread_id: string;
     post_id: string;
     screen_sharing_id: string;

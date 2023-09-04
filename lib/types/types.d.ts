@@ -101,18 +101,22 @@ export type CallsConfig = {
 export type Reaction = UserReactionData & {
     displayName: string;
 };
-export type CallUserState = {
+export type SessionState = {
     session_id: string;
     user_id: string;
     unmuted: boolean;
     raised_hand: number;
 };
+export type UserSessionState = SessionState & {
+    voice?: boolean;
+    reaction?: Reaction;
+};
 export type CallState = {
     id: string;
     start_at: number;
     users: string[];
-    states?: CallUserState[];
-    sessions: CallUserState[];
+    states?: SessionState[];
+    sessions: SessionState[];
     thread_id: string;
     post_id: string;
     screen_sharing_id: string;
