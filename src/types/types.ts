@@ -28,11 +28,19 @@ export type CallStartData = {
 
 export type UserDisconnectedData = {
     userID: string;
-    session_id: string;
 } & BaseData
 
 export type UserConnectedData = {
     userID: string;
+} & BaseData
+
+export type UserJoinedData = {
+    user_id: string;
+    session_id: string;
+} & BaseData
+
+export type UserLeftData = {
+    user_id: string;
     session_id: string;
 } & BaseData
 
