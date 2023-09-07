@@ -126,6 +126,7 @@ export type CallState = {
     thread_id: string;
     post_id: string;
     screen_sharing_id: string;
+    screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
     recording?: CallRecordingState;
