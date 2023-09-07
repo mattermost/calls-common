@@ -110,7 +110,8 @@ export type WebsocketEventData =
     | CallHostChangedData
     | CallRecordingStateData
     | UserState
-    | UserDismissedNotification;
+    | UserDismissedNotification
+    | CallStateData;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
@@ -154,6 +155,11 @@ export type CallState = {
     host_id: string;
     recording?: CallRecordingState;
     dismissed_notification?: { [userID: string]: boolean };
+}
+
+export type CallStateData = {
+    channel_id: string;
+    call: string;
 }
 
 export type CallChannelState = {
