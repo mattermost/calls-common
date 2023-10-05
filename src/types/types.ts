@@ -169,17 +169,17 @@ export type CallState = {
     id: string;
     start_at: number;
 
-    // DEPRECATED since Calls v0.20.0 - MM v9.1
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
     users: string[];
 
-    // DEPRECATED since Calls v0.20.0 - MM v9.1
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
     states?: SessionState[],
 
     sessions: SessionState[],
     thread_id: string;
     post_id: string;
 
-    // DEPRECATED since Calls v0.20.0 - MM v9.1
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
     screen_sharing_id: string;
 
     screen_sharing_session_id: string;
