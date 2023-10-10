@@ -5,6 +5,7 @@ import {Logger, RTCPeerConfig, WebRTC} from './types';
 import {isFirefox, getFirefoxVersion} from './utils';
 
 const rtcConnFailedErr = new Error('rtc connection failed');
+const rtcConnTimeoutMsDefault = 15 * 1000;
 const pingIntervalMs = 1000;
 
 enum SimulcastLevel {
@@ -30,6 +31,7 @@ export class RTCPeer extends EventEmitter {
     private readonly webrtc: WebRTC;
 
     private pingIntervalID: ReturnType<typeof setInterval>;
+    private connTimeoutID: ReturnType<typeof setTimeout>;
     private rtt = 0;
 
     private makingOffer = false;
@@ -64,6 +66,12 @@ export class RTCPeer extends EventEmitter {
         this.pc.ontrack = (ev) => this.onTrack(ev);
 
         this.connected = false;
+        const connTimeout = config.connTimeoutMs || rtcConnTimeoutMsDefault;
+        this.connTimeoutID = setTimeout(() => {
+            if (!this.connected) {
+                this.emit('error', 'timed out waiting for rtc connection');
+            }
+        }, connTimeout);
 
         // We create a data channel for two reasons:
         // - Initiate a connection without preemptively adding audio/video tracks.
@@ -107,6 +115,7 @@ export class RTCPeer extends EventEmitter {
     private onConnectionStateChange() {
         switch (this.pc?.connectionState) {
         case 'connected':
+            clearTimeout(this.connTimeoutID);
             this.connected = true;
             break;
         case 'failed':
@@ -312,6 +321,7 @@ export class RTCPeer extends EventEmitter {
         this.pc = null;
         this.connected = false;
         clearInterval(this.pingIntervalID);
+        clearTimeout(this.connTimeoutID);
     }
 }
 
