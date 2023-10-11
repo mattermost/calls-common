@@ -223,8 +223,8 @@ export class RTCPeer extends EventEmitter {
             if (isFirefox() && getFirefoxVersion() < 110) {
                 // DEPRECATED: we should consider removing this as sendEncodings
                 // has been supported since v110.
-                sender = await this.pc.addTrack(track, stream!);
-                const params = await sender.getParameters();
+                sender = this.pc.addTrack(track, stream!);
+                const params = sender.getParameters();
                 params.encodings = FallbackScreenEncodings;
                 await sender.setParameters(params);
 
@@ -247,19 +247,19 @@ export class RTCPeer extends EventEmitter {
                 sender = trx.sender;
             }
         } else {
-            sender = await this.pc.addTrack(track, stream);
+            sender = this.pc.addTrack(track, stream);
         }
 
         this.senders[track.id] = sender;
     }
 
-    public addStream(stream: MediaStream) {
-        stream.getTracks().forEach((track) => {
-            this.addTrack(track, stream);
-        });
+    public async addStream(stream: MediaStream) {
+        for (const track of stream.getTracks()) {
+            await this.addTrack(track, stream);
+        }
     }
 
-    public replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null) {
+    public async replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null) {
         const sender = this.senders[oldTrackID];
         if (!sender) {
             throw new Error('sender for track not found');
@@ -268,7 +268,7 @@ export class RTCPeer extends EventEmitter {
             delete this.senders[oldTrackID];
             this.senders[newTrack.id] = sender;
         }
-        sender.replaceTrack(newTrack);
+        await sender.replaceTrack(newTrack);
     }
 
     public removeTrack(trackID: string) {
@@ -314,4 +314,3 @@ export class RTCPeer extends EventEmitter {
         clearInterval(this.pingIntervalID);
     }
 }
-
