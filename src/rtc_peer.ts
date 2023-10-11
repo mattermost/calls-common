@@ -108,6 +108,7 @@ export class RTCPeer extends EventEmitter {
         switch (this.pc?.connectionState) {
         case 'connected':
             this.connected = true;
+            this.emit('pc_connected');
             break;
         case 'failed':
             this.emit('close', rtcConnFailedErr);
