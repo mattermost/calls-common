@@ -9,6 +9,7 @@ export declare class RTCPeer extends EventEmitter {
     private readonly logger;
     private readonly webrtc;
     private pingIntervalID;
+    private connTimeoutID;
     private rtt;
     private makingOffer;
     private candidates;

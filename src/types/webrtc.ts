@@ -12,6 +12,7 @@ export type RTCPeerConfig = {
     logger: Logger;
     webrtc?: WebRTC;
     simulcast?: boolean;
+    connTimeoutMs: number;
 }
 
 export type RTCStats = {
