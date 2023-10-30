@@ -103,6 +103,7 @@ export type CallsConfig = {
     sku_short_name: string;
     EnableSimulcast: boolean;
     EnableRinging: boolean;
+    EnableTranscriptions: boolean;
 };
 export type Reaction = UserReactionData & {
     displayName: string;
