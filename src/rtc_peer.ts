@@ -100,7 +100,9 @@ export class RTCPeer extends EventEmitter {
 
     private onICECandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate) {
-            this.emit('candidate', ev.candidate);
+            this.logger.logErr('<><> RTCPeer -- ice candidate');
+            //this.emit('candidate', ev.candidate);
+            this.emit('candidate', 'boom');
         }
     }
 
@@ -108,7 +110,9 @@ export class RTCPeer extends EventEmitter {
         switch (this.pc?.connectionState) {
         case 'connected':
             this.connected = true;
-            this.emit('pc_connected');
+            console.log('<><> RTCPeer -- connected. emitting pc_connected');
+            this.logger.logErr('<><> RTCPeer -- connected. emitting pc_connected');
+            this.emit('pcconnected');
             break;
         case 'failed':
             this.emit('close', rtcConnFailedErr);
@@ -299,6 +303,7 @@ export class RTCPeer extends EventEmitter {
 
         this.removeAllListeners('candidate');
         this.removeAllListeners('connect');
+        this.removeAllListeners('pcconnected');
         this.removeAllListeners('error');
         this.removeAllListeners('close');
         this.removeAllListeners('offer');
