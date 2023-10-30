@@ -34,20 +34,34 @@ export type UserConnectedData = {
     userID: string;
 } & BaseData
 
+export type UserJoinedData = {
+    user_id: string;
+    session_id: string;
+} & BaseData
+
+export type UserLeftData = {
+    user_id: string;
+    session_id: string;
+} & BaseData
+
 export type UserMutedUnmutedData = {
     userID: string;
+    session_id: string;
 } & BaseData
 
 export type UserVoiceOnOffData = {
     userID: string;
+    session_id: string;
 } & BaseData
 
 export type UserScreenOnOffData = {
     userID: string;
+    session_id: string;
 } & BaseData
 
 export type UserRaiseUnraiseHandData = {
     userID: string;
+    session_id: string;
     raised_hand: number;
 } & BaseData
 
@@ -60,6 +74,7 @@ export type EmojiData = {
 
 export type UserReactionData = {
     user_id: string;
+    session_id: string;
     emoji: EmojiData;
     timestamp: number;
 } & BaseData
@@ -138,19 +153,36 @@ export type Reaction = UserReactionData & {
     displayName: string;
 }
 
-export type CallUserState = {
+export type SessionState = {
+    session_id: string;
+    user_id: string;
     unmuted: boolean;
     raised_hand: number;
+}
+
+export type UserSessionState = SessionState & {
+    voice?: boolean;
+    reaction?: Reaction;
 }
 
 export type CallState = {
     id: string;
     start_at: number;
+
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
     users: string[];
-    states?: CallUserState[],
+
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
+    states?: SessionState[],
+
+    sessions: SessionState[],
     thread_id: string;
     post_id: string;
+
+    // DEPRECATED since Calls v0.21.0 - MM v9.3
     screen_sharing_id: string;
+
+    screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
     recording?: CallRecordingState;
