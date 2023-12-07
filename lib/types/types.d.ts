@@ -154,3 +154,8 @@ export type ColorHSL = {
     s: number;
     l: number;
 };
+export type Caption = {
+    title: string;
+    language: string;
+    file_id: string;
+};
