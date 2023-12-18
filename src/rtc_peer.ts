@@ -113,10 +113,17 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onConnectionStateChange() {
+        this.logger.logDebug(`RTCPeer: connection state change -> ${this.pc?.connectionState}`);
         switch (this.pc?.connectionState) {
         case 'connected':
-            clearTimeout(this.connTimeoutID);
-            this.connected = true;
+            if (!this.connected) {
+                clearTimeout(this.connTimeoutID);
+                this.connected = true;
+                this.emit('connect');
+            }
+            break;
+        case 'closed':
+            this.emit('close');
             break;
         case 'failed':
             this.emit('close', rtcConnFailedErr);
@@ -125,18 +132,7 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onICEConnectionStateChange() {
-        switch (this.pc?.iceConnectionState) {
-        case 'connected':
-            this.emit('connect');
-            break;
-        case 'failed':
-            this.emit('close', rtcConnFailedErr);
-            break;
-        case 'closed':
-            this.emit('close');
-            break;
-        default:
-        }
+        this.logger.logDebug(`RTCPeer: ICE connection state change -> ${this.pc?.iceConnectionState}`);
     }
 
     private async onNegotiationNeeded() {
@@ -160,7 +156,7 @@ export class RTCPeer extends EventEmitter {
             for (const t of this.pc.getTransceivers()) {
                 if (t.receiver && t.receiver.track === ev.track) {
                     if (t.direction !== 'sendrecv') {
-                        this.logger.logDebug('onTrack: setting transceiver direction for track');
+                        this.logger.logDebug('RTCPeer.onTrack: setting transceiver direction for track');
                         t.direction = 'sendrecv';
                     }
                     break;
@@ -179,7 +175,7 @@ export class RTCPeer extends EventEmitter {
         const msg = JSON.parse(data);
 
         if (msg.type === 'offer' && (this.makingOffer || this.pc?.signalingState !== 'stable')) {
-            this.logger.logDebug('signaling conflict, we are polite, proceeding...');
+            this.logger.logDebug('RTCPeer.signal: signaling conflict, we are polite, proceeding...');
         }
 
         switch (msg.type) {
@@ -189,10 +185,10 @@ export class RTCPeer extends EventEmitter {
             // error. In such case we queue them up to be added later.
             if (this.pc.remoteDescription && this.pc.remoteDescription.type) {
                 this.pc.addIceCandidate(msg.candidate).catch((err) => {
-                    this.logger.logErr('failed to add candidate', err);
+                    this.logger.logErr('RTCPeer.signal: failed to add candidate', err);
                 });
             } else {
-                this.logger.logDebug('received ice candidate before remote description, queuing...');
+                this.logger.logDebug('RTCPeer.signal: received ice candidate before remote description, queuing...');
                 this.candidates.push(msg.candidate);
             }
             break;
@@ -204,9 +200,9 @@ export class RTCPeer extends EventEmitter {
         case 'answer':
             await this.pc.setRemoteDescription(msg);
             for (const candidate of this.candidates) {
-                this.logger.logDebug('adding queued ice candidate');
+                this.logger.logDebug('RTCPeer.signal: adding queued ice candidate');
                 this.pc.addIceCandidate(candidate).catch((err) => {
-                    this.logger.logErr('failed to add candidate', err);
+                    this.logger.logErr('RTCPeer.signal: failed to add candidate', err);
                 });
             }
             break;
@@ -241,13 +237,13 @@ export class RTCPeer extends EventEmitter {
                 // will default to sendrecv which will cause problems when removing the track.
                 for (const trx of this.pc.getTransceivers()) {
                     if (trx.sender === sender) {
-                        this.logger.logDebug('addTrack: setting transceiver direction to sendonly');
+                        this.logger.logDebug('RTCPeer.addTrack: setting transceiver direction to sendonly');
                         trx.direction = 'sendonly';
                         break;
                     }
                 }
             } else {
-                this.logger.logDebug('addTrack: creating new transceiver on send');
+                this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
                 const trx = this.pc.addTransceiver(track, {
                     direction: 'sendonly',
                     sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
