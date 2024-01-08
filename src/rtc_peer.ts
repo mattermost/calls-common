@@ -80,6 +80,8 @@ export class RTCPeer extends EventEmitter {
         this.dc = this.pc.createDataChannel('calls-dc');
 
         this.pingIntervalID = this.initPingHandler();
+
+        this.logger.logDebug('DEBUG NPM CACHE');
     }
 
     private initPingHandler() {
