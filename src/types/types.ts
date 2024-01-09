@@ -223,3 +223,42 @@ export type Caption = {
 export type JobStopData = {
     job_id: string;
 };
+
+export type CallJobMetadata = {
+    file_id: string;
+    post_id: string;
+    tr_id?: string;
+    rec_id?: string;
+};
+
+export type CallRecordingPropsMap = {
+    [key: string]: CallJobMetadata;
+};
+
+export type CallTranscriptionPropsMap = {
+    [key: string]: CallJobMetadata;
+};
+
+export type CallPostProps = {
+    title: string;
+    start_at: number;
+    end_at: number;
+    participants: string[];
+    recordings: CallRecordingPropsMap,
+    transcriptions: CallTranscriptionPropsMap,
+
+    // DEPRECATED
+    recording_files: string[];
+};
+
+export type CallCaption = {
+    file_id: string;
+    language: string;
+    title: string;
+};
+
+export type CallRecordingPostProps = {
+    call_post_id: string;
+    recording_id: string;
+    captions: CallCaption[];
+};
