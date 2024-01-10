@@ -126,7 +126,8 @@ export type WebsocketEventData =
     | CallRecordingStateData
     | UserState
     | UserDismissedNotification
-    | CallStateData;
+    | CallStateData
+    | JobStopData;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
@@ -217,6 +218,10 @@ export type Caption = {
     title: string;
     language: string;
     file_id: string;
+};
+
+export type JobStopData = {
+    job_id: string;
 };
 
 export type CallJobMetadata = {
