@@ -84,7 +84,12 @@ export type UserDismissedNotification = {
     userID: string;
     callID: string;
 };
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData | JobStopData;
+export type UserRemovedData = {
+    user_id?: string;
+    channel_id?: string;
+    remover_id: string;
+} & BaseData;
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;

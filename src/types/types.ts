@@ -110,6 +110,12 @@ export type UserDismissedNotification = {
     callID: string;
 }
 
+export type UserRemovedData = {
+    user_id?: string;
+    channel_id?: string;
+    remover_id: string;
+} & BaseData
+
 export type WebsocketEventData =
     EmptyData
     | HelloData
@@ -127,7 +133,8 @@ export type WebsocketEventData =
     | UserState
     | UserDismissedNotification
     | CallStateData
-    | JobStopData;
+    | JobStopData
+    | UserRemovedData;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
