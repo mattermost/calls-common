@@ -84,3 +84,7 @@ export type RTCMonitorConfig = {
     logger: Logger;
     monitorInterval: number;
 }
+
+export type RTCTrackOptions = {
+    codec: RTCRtpCodecCapability;
+}
