@@ -89,7 +89,13 @@ export type UserRemovedData = {
     channel_id?: string;
     remover_id: string;
 } & BaseData;
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData;
+export type LiveCaptionData = {
+    channelID: string;
+    user_id: string;
+    session_id: string;
+    text: string;
+} & BaseData;
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData | LiveCaptionData;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;
@@ -112,6 +118,10 @@ export type CallsConfig = {
 };
 export type Reaction = UserReactionData & {
     displayName: string;
+};
+export type LiveCaption = LiveCaptionData & {
+    display_name: string;
+    caption_id: string;
 };
 export type SessionState = {
     session_id: string;
