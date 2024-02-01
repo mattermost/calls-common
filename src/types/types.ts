@@ -164,6 +164,7 @@ export type CallsConfig = {
     EnableSimulcast: boolean;
     EnableRinging: boolean;
     EnableTranscriptions: boolean;
+    EnableLiveCaptions: boolean;
 }
 
 export type Reaction = UserReactionData & {
