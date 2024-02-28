@@ -116,6 +116,13 @@ export type UserRemovedData = {
     remover_id: string;
 } & BaseData
 
+export type LiveCaptionData = {
+    channel_id: string;
+    user_id: string;
+    session_id: string;
+    text: string;
+} & BaseData
+
 export type WebsocketEventData =
     EmptyData
     | HelloData
@@ -134,7 +141,8 @@ export type WebsocketEventData =
     | UserDismissedNotification
     | CallStateData
     | JobStopData
-    | UserRemovedData;
+    | UserRemovedData
+    | LiveCaptionData;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
@@ -156,10 +164,16 @@ export type CallsConfig = {
     EnableSimulcast: boolean;
     EnableRinging: boolean;
     EnableTranscriptions: boolean;
+    EnableLiveCaptions: boolean;
 }
 
 export type Reaction = UserReactionData & {
     displayName: string;
+}
+
+export type LiveCaption = LiveCaptionData & {
+    display_name: string;
+    caption_id: string;
 }
 
 export type SessionState = {
