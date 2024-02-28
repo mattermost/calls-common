@@ -90,7 +90,7 @@ export type UserRemovedData = {
     remover_id: string;
 } & BaseData;
 export type LiveCaptionData = {
-    channelID: string;
+    channel_id: string;
     user_id: string;
     session_id: string;
     text: string;
