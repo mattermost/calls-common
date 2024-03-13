@@ -69,6 +69,7 @@ export type CallJobState = {
     error_at?: number;
 } & BaseData;
 export type CallJobStateData = {
+    type: string;
     jobState: CallJobState;
     callID: string;
 } & BaseData;
