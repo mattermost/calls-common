@@ -92,6 +92,7 @@ export type CallJobState = {
 } & BaseData
 
 export type CallJobStateData = {
+    type: string;
     jobState: CallJobState;
     callID: string;
 } & BaseData
