@@ -61,15 +61,16 @@ export type UserReactionData = {
 export type CallHostChangedData = {
     hostID: string;
 } & BaseData;
-export type CallRecordingState = {
+export type CallJobState = {
+    type: string;
     init_at: number;
     start_at: number;
     end_at: number;
     err?: string;
     error_at?: number;
 } & BaseData;
-export type CallRecordingStateData = {
-    recState: CallRecordingState;
+export type CallJobStateData = {
+    jobState: CallJobState;
     callID: string;
 } & BaseData;
 export type UserState = {
@@ -95,7 +96,7 @@ export type LiveCaptionData = {
     session_id: string;
     text: string;
 } & BaseData;
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallRecordingStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData | LiveCaptionData;
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallJobStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData | LiveCaptionData;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;
@@ -146,7 +147,8 @@ export type CallState = {
     screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
-    recording?: CallRecordingState;
+    recording?: CallJobState;
+    live_captions?: CallJobState;
     dismissed_notification?: {
         [userID: string]: boolean;
     };
