@@ -84,6 +84,7 @@ export type CallHostChangedData = {
 } & BaseData
 
 export type CallJobState = {
+    type: string;
     init_at: number;
     start_at: number;
     end_at: number;
@@ -92,7 +93,6 @@ export type CallJobState = {
 } & BaseData
 
 export type CallJobStateData = {
-    type: string;
     jobState: CallJobState;
     callID: string;
 } & BaseData
