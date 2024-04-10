@@ -83,7 +83,8 @@ export type CallHostChangedData = {
     hostID: string;
 } & BaseData
 
-export type CallRecordingState = {
+export type CallJobState = {
+    type: string;
     init_at: number;
     start_at: number;
     end_at: number;
@@ -91,8 +92,8 @@ export type CallRecordingState = {
     error_at?: number;
 } & BaseData
 
-export type CallRecordingStateData = {
-    recState: CallRecordingState;
+export type CallJobStateData = {
+    jobState: CallJobState;
     callID: string;
 } & BaseData
 
@@ -136,7 +137,7 @@ export type WebsocketEventData =
     | EmojiData
     | UserReactionData
     | CallHostChangedData
-    | CallRecordingStateData
+    | CallJobStateData
     | UserState
     | UserDismissedNotification
     | CallStateData
@@ -208,7 +209,8 @@ export type CallState = {
     screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
-    recording?: CallRecordingState;
+    recording?: CallJobState;
+    live_captions?: CallJobState;
     dismissed_notification?: { [userID: string]: boolean };
 }
 
