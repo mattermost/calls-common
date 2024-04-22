@@ -166,7 +166,7 @@ export type CallsConfig = {
     EnableRinging: boolean;
     EnableTranscriptions: boolean;
     EnableLiveCaptions: boolean;
-    HostControlsAvailable: boolean;
+    HostControlsAllowed: boolean;
 }
 
 export type Reaction = UserReactionData & {
