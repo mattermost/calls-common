@@ -298,9 +298,8 @@ export type HostControlLowerHand = HostControlMsg & {
     host_id: string;
 }
 
-export type HostControlRemoved = {
+export type HostControlRemoved = HostControlMsg & {
     call_id: string;
-    session_id: string;
     user_id: string;
 }
 
