@@ -81,6 +81,7 @@ export type UserReactionData = {
 
 export type CallHostChangedData = {
     hostID: string;
+    call_id: string;
 } & BaseData
 
 export type CallJobState = {
@@ -286,3 +287,20 @@ export type CallRecordingPostProps = {
     recording_id: string;
     captions: CallCaption[];
 };
+
+export type HostControlMsg = {
+    channel_id: string;
+    session_id: string;
+}
+
+export type HostControlLowerHand = HostControlMsg & {
+    call_id: string;
+    host_id: string;
+}
+
+export type HostControlRemoved = {
+    call_id: string;
+    session_id: string;
+    user_id: string;
+}
+
