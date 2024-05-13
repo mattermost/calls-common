@@ -144,7 +144,10 @@ export type WebsocketEventData =
     | CallStateData
     | JobStopData
     | UserRemovedData
-    | LiveCaptionData;
+    | LiveCaptionData
+    | HostControlMsg
+    | HostControlRemoved
+    | HostControlLowerHand;
 
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
