@@ -97,7 +97,7 @@ export type LiveCaptionData = {
     session_id: string;
     text: string;
 } & BaseData;
-export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallJobStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData | LiveCaptionData;
+export type WebsocketEventData = EmptyData | HelloData | CallStartData | UserDisconnectedData | UserConnectedData | UserMutedUnmutedData | UserVoiceOnOffData | UserScreenOnOffData | UserRaiseUnraiseHandData | EmojiData | UserReactionData | CallHostChangedData | CallJobStateData | UserState | UserDismissedNotification | CallStateData | JobStopData | UserRemovedData | LiveCaptionData | HostControlMsg | HostControlRemoved | HostControlLowerHand;
 export interface Logger {
     logDebug: (...args: unknown[]) => void;
     logErr: (...args: unknown[]) => void;
