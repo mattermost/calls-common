@@ -104,6 +104,10 @@ export interface Logger {
     logWarn: (...args: unknown[]) => void;
     logInfo: (...args: unknown[]) => void;
 }
+export declare enum TranscribeAPI {
+    WhisperCPP = "whisper.cpp",
+    AzureAI = "azure"
+}
 export type CallsConfig = {
     ICEServers: string[];
     ICEServersConfigs: RTCIceServer[];
@@ -119,6 +123,7 @@ export type CallsConfig = {
     EnableTranscriptions: boolean;
     EnableLiveCaptions: boolean;
     HostControlsAllowed: boolean;
+    TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {
     displayName: string;
