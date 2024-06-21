@@ -123,6 +123,7 @@ export type CallsConfig = {
     EnableTranscriptions: boolean;
     EnableLiveCaptions: boolean;
     HostControlsAllowed: boolean;
+    EnableAV1: boolean;
     TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {

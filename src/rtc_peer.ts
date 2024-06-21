@@ -251,7 +251,7 @@ export class RTCPeer extends EventEmitter {
                 });
 
                 if (opts?.codec && trx.setCodecPreferences) {
-                    this.logger.logDebug(`setting video codec preference ${opts.codec}`);
+                    this.logger.logDebug('setting video codec preference', opts.codec);
                     trx.setCodecPreferences([opts.codec]);
                 }
 
@@ -312,6 +312,24 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
         return this.pc.getStats(null);
+    }
+
+    static async getVideoCodec(mimeType: string, getCapabilities?: typeof RTCRtpReceiver.getCapabilities) {
+        if (!getCapabilities) {
+            getCapabilities = RTCRtpReceiver.getCapabilities;
+        }
+
+        if (getCapabilities) {
+            const videoCapabilities = await getCapabilities('video');
+            if (videoCapabilities) {
+                for (const codec of videoCapabilities.codecs) {
+                    if (codec.mimeType === mimeType) {
+                        return codec;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public destroy() {
