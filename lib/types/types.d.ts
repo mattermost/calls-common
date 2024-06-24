@@ -231,3 +231,10 @@ export type HostControlRemoved = HostControlMsg & {
     call_id: string;
     user_id: string;
 };
+export type CallsClientJoinData = {
+    channelID: string;
+    title?: string;
+    threadID?: string;
+    jobID?: string;
+    av1Support?: boolean;
+};

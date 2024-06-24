@@ -315,3 +315,15 @@ export type HostControlRemoved = HostControlMsg & {
     user_id: string;
 }
 
+export type CallsClientJoinData = {
+    channelID: string;
+    title?: string;
+    threadID?: string;
+
+    // Calls bot only
+    // jobID is the id of the job tight to the bot connection to
+    // a call (e.g. recording, transcription).
+    jobID?: string;
+
+    av1Support?: boolean;
+}
