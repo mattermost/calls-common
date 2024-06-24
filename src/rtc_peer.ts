@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCPeerConfig, WebRTC, RTCTrackOptions} from './types';
+import {Logger, RTCPeerConfig, RTCTrackOptions} from './types';
 
 import {isFirefox, getFirefoxVersion} from './utils';
 
@@ -28,7 +28,6 @@ export class RTCPeer extends EventEmitter {
     private dc: RTCDataChannel;
     private readonly senders: { [key: string]: RTCRtpSender[] };
     private readonly logger: Logger;
-    private readonly webrtc: WebRTC;
 
     private pingIntervalID: ReturnType<typeof setInterval>;
     private connTimeoutID: ReturnType<typeof setTimeout>;
@@ -44,21 +43,11 @@ export class RTCPeer extends EventEmitter {
         this.config = config;
         this.logger = config.logger;
 
-        // use the provided webrtc methods (for mobile), or the build in lib.dom methods (for webapp)
-        if (config.webrtc) {
-            this.webrtc = config.webrtc;
-        } else {
-            this.webrtc = {
-                MediaStream,
-                RTCPeerConnection,
-            };
-        }
-
         // We keep a map of track IDs -> RTP sender so that we can easily
         // replace tracks when muting/unmuting.
         this.senders = {};
 
-        this.pc = new this.webrtc.RTCPeerConnection(config);
+        this.pc = new RTCPeerConnection(config);
         this.pc.onnegotiationneeded = () => this.onNegotiationNeeded();
         this.pc.onicecandidate = (ev) => this.onICECandidate(ev);
         this.pc.oniceconnectionstatechange = () => this.onICEConnectionStateChange();
@@ -164,7 +153,7 @@ export class RTCPeer extends EventEmitter {
             }
         }
 
-        this.emit('stream', new this.webrtc.MediaStream([ev.track]));
+        this.emit('stream', new MediaStream([ev.track]));
     }
 
     public async signal(data: string) {
@@ -314,13 +303,9 @@ export class RTCPeer extends EventEmitter {
         return this.pc.getStats(null);
     }
 
-    static async getVideoCodec(mimeType: string, getCapabilities?: typeof RTCRtpReceiver.getCapabilities) {
-        if (!getCapabilities) {
-            getCapabilities = RTCRtpReceiver.getCapabilities;
-        }
-
-        if (getCapabilities) {
-            const videoCapabilities = await getCapabilities('video');
+    static async getVideoCodec(mimeType: string) {
+        if (RTCRtpReceiver.getCapabilities) {
+            const videoCapabilities = await RTCRtpReceiver.getCapabilities('video');
             if (videoCapabilities) {
                 for (const codec of videoCapabilities.codecs) {
                     if (codec.mimeType === mimeType) {

@@ -7,7 +7,6 @@ export declare class RTCPeer extends EventEmitter {
     private dc;
     private readonly senders;
     private readonly logger;
-    private readonly webrtc;
     private pingIntervalID;
     private connTimeoutID;
     private rtt;
@@ -28,6 +27,6 @@ export declare class RTCPeer extends EventEmitter {
     replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
     removeTrack(trackID: string): void;
     getStats(): Promise<RTCStatsReport>;
-    static getVideoCodec(mimeType: string, getCapabilities?: typeof RTCRtpReceiver.getCapabilities): Promise<RTCRtpCodecCapability | null>;
+    static getVideoCodec(mimeType: string): Promise<RTCRtpCodecCapability | null>;
     destroy(): void;
 }
