@@ -67,7 +67,7 @@ jobs:
       - name: ci/check-build
         run: |
           mkdir -p tmp
-          tsc --outDir tmp
+          npx tsc --outDir tmp
           diff -r lib tmp
           rm -rf tmp
   test:
