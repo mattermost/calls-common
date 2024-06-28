@@ -150,7 +150,7 @@ export class RTCMonitor extends EventEmitter {
 
             if (report.type === 'candidate-pair' && report.nominated) {
                 if (!candidate || (report.priority && candidate.priority && report.priority > candidate.priority)) {
-                    candidate = newRTCCandidatePairStats(report);
+                    candidate = newRTCCandidatePairStats(report, reports);
                 }
             }
 
