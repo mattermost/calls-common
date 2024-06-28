@@ -1,4 +1,4 @@
-import { RTCStats } from './types';
+import { RTCStats, SSRCStats, ICEStats, RTCCandidatePairStats } from './types';
 export declare function newRTCLocalInboundStats(report: any): {
     timestamp: any;
     mid: any;
@@ -21,12 +21,7 @@ export declare function newRTCRemoteInboundStats(report: any): {
     jitter: any;
     roundTripTime: any;
 };
-export declare function newRTCCandidatePairStats(report: any): {
-    timestamp: any;
-    priority: any;
-    packetsSent: any;
-    packetsReceived: any;
-    currentRoundTripTime: any;
-    totalRoundTripTime: any;
-};
+export declare function newRTCCandidatePairStats(report: any, reports: RTCStatsReport): RTCCandidatePairStats;
+export declare function parseSSRCStats(reports: RTCStatsReport): SSRCStats;
+export declare function parseICEStats(reports: RTCStatsReport): ICEStats;
 export declare function parseRTCStats(reports: RTCStatsReport): RTCStats;
