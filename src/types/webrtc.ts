@@ -2,15 +2,9 @@ import {RTCPeer} from '../rtc_peer';
 
 import {Logger} from './types';
 
-export interface WebRTC {
-    MediaStream: typeof MediaStream;
-    RTCPeerConnection: typeof RTCPeerConnection;
-}
-
 export type RTCPeerConfig = {
     iceServers: RTCIceServer[];
     logger: Logger;
-    webrtc?: WebRTC;
     simulcast?: boolean;
     connTimeoutMs?: number;
 }
@@ -83,4 +77,8 @@ export type RTCMonitorConfig = {
     peer: RTCPeer;
     logger: Logger;
     monitorInterval: number;
+}
+
+export type RTCTrackOptions = {
+    codec: RTCRtpCodecCapability;
 }

@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCPeerConfig, WebRTC} from './types';
+import {Logger, RTCPeerConfig, RTCTrackOptions} from './types';
 
 import {isFirefox, getFirefoxVersion} from './utils';
 
@@ -26,9 +26,8 @@ export class RTCPeer extends EventEmitter {
     private config: RTCPeerConfig;
     private pc: RTCPeerConnection | null;
     private dc: RTCDataChannel;
-    private readonly senders: { [key: string]: RTCRtpSender };
+    private readonly senders: { [key: string]: RTCRtpSender[] };
     private readonly logger: Logger;
-    private readonly webrtc: WebRTC;
 
     private pingIntervalID: ReturnType<typeof setInterval>;
     private connTimeoutID: ReturnType<typeof setTimeout>;
@@ -44,21 +43,11 @@ export class RTCPeer extends EventEmitter {
         this.config = config;
         this.logger = config.logger;
 
-        // use the provided webrtc methods (for mobile), or the build in lib.dom methods (for webapp)
-        if (config.webrtc) {
-            this.webrtc = config.webrtc;
-        } else {
-            this.webrtc = {
-                MediaStream,
-                RTCPeerConnection,
-            };
-        }
-
         // We keep a map of track IDs -> RTP sender so that we can easily
         // replace tracks when muting/unmuting.
         this.senders = {};
 
-        this.pc = new this.webrtc.RTCPeerConnection(config);
+        this.pc = new RTCPeerConnection(config);
         this.pc.onnegotiationneeded = () => this.onNegotiationNeeded();
         this.pc.onicecandidate = (ev) => this.onICECandidate(ev);
         this.pc.oniceconnectionstatechange = () => this.onICEConnectionStateChange();
@@ -164,7 +153,7 @@ export class RTCPeer extends EventEmitter {
             }
         }
 
-        this.emit('stream', new this.webrtc.MediaStream([ev.track]));
+        this.emit('stream', new MediaStream([ev.track]));
     }
 
     public async signal(data: string) {
@@ -211,7 +200,7 @@ export class RTCPeer extends EventEmitter {
         }
     }
 
-    public async addTrack(track: MediaStreamTrack, stream: MediaStream) {
+    public async addTrack(track: MediaStreamTrack, stream: MediaStream, opts?: RTCTrackOptions) {
         if (!this.pc) {
             throw new Error('peer has been destroyed');
         }
@@ -249,31 +238,45 @@ export class RTCPeer extends EventEmitter {
                     sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
                     streams: [stream!],
                 });
+
+                if (opts?.codec && trx.setCodecPreferences) {
+                    this.logger.logDebug('setting video codec preference', opts.codec);
+                    trx.setCodecPreferences([opts.codec]);
+                }
+
                 sender = trx.sender;
             }
         } else {
             sender = await this.pc.addTrack(track, stream);
         }
 
-        this.senders[track.id] = sender;
+        if (!this.senders[track.id]) {
+            this.senders[track.id] = [];
+        }
+
+        this.senders[track.id].push(sender);
     }
 
-    public addStream(stream: MediaStream) {
-        stream.getTracks().forEach((track) => {
-            this.addTrack(track, stream);
+    public addStream(stream: MediaStream, opts?: RTCTrackOptions[]) {
+        stream.getTracks().forEach((track, idx) => {
+            this.addTrack(track, stream, opts?.[idx]);
         });
     }
 
     public replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null) {
-        const sender = this.senders[oldTrackID];
-        if (!sender) {
-            throw new Error('sender for track not found');
+        const senders = this.senders[oldTrackID];
+        if (!senders) {
+            throw new Error('senders for track not found');
         }
+
         if (newTrack && newTrack.id !== oldTrackID) {
             delete this.senders[oldTrackID];
-            this.senders[newTrack.id] = sender;
+            this.senders[newTrack.id] = senders;
         }
-        sender.replaceTrack(newTrack);
+
+        for (const sender of senders) {
+            sender.replaceTrack(newTrack);
+        }
     }
 
     public removeTrack(trackID: string) {
@@ -281,12 +284,16 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
-        const sender = this.senders[trackID];
-        if (!sender) {
-            throw new Error('sender for track not found');
+        const senders = this.senders[trackID];
+        if (!senders) {
+            throw new Error('senders for track not found');
         }
 
-        this.pc.removeTrack(sender);
+        for (const sender of senders) {
+            this.pc.removeTrack(sender);
+        }
+
+        delete this.senders[trackID];
     }
 
     public getStats() {
@@ -294,6 +301,20 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
         return this.pc.getStats(null);
+    }
+
+    static async getVideoCodec(mimeType: string) {
+        if (RTCRtpReceiver.getCapabilities) {
+            const videoCapabilities = await RTCRtpReceiver.getCapabilities('video');
+            if (videoCapabilities) {
+                for (const codec of videoCapabilities.codecs) {
+                    if (codec.mimeType === mimeType) {
+                        return codec;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public destroy() {

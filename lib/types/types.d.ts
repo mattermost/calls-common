@@ -123,6 +123,7 @@ export type CallsConfig = {
     EnableTranscriptions: boolean;
     EnableLiveCaptions: boolean;
     HostControlsAllowed: boolean;
+    EnableAV1: boolean;
     TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {
@@ -229,4 +230,11 @@ export type HostControlLowerHand = HostControlMsg & {
 export type HostControlRemoved = HostControlMsg & {
     call_id: string;
     user_id: string;
+};
+export type CallsClientJoinData = {
+    channelID: string;
+    title?: string;
+    threadID?: string;
+    jobID?: string;
+    av1Support?: boolean;
 };
