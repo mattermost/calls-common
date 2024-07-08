@@ -177,6 +177,7 @@ export type CallsConfig = {
     EnableLiveCaptions: boolean;
     HostControlsAllowed: boolean;
     EnableAV1: boolean;
+    GroupCallsAllowed: boolean;
 
     // Admin only
     TranscribeAPI: TranscribeAPI;
