@@ -21,6 +21,7 @@ export declare class RTCPeer extends EventEmitter {
     private onICEConnectionStateChange;
     private onNegotiationNeeded;
     private onTrack;
+    private flushICECandidates;
     signal(data: string): Promise<void>;
     addTrack(track: MediaStreamTrack, stream: MediaStream, opts?: RTCTrackOptions): Promise<void>;
     addStream(stream: MediaStream, opts?: RTCTrackOptions[]): void;
