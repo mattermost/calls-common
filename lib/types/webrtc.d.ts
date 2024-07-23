@@ -6,11 +6,18 @@ export type RTCPeerConfig = {
     simulcast?: boolean;
     connTimeoutMs?: number;
 };
-export type RTCStats = {
+export type SSRCStats = {
     [key: number]: {
         local: RTCLocalStats;
         remote: RTCRemoteStats;
     };
+};
+export type ICEStats = {
+    [key: string]: RTCCandidatePairStats[];
+};
+export type RTCStats = {
+    ssrcStats: SSRCStats;
+    iceStats: ICEStats;
 };
 export type RTCLocalStats = {
     in?: RTCLocalInboundStats;
@@ -54,13 +61,23 @@ export type RTCRemoteOutboundStats = {
     packetsSent: number;
     bytesSent: number;
 };
+export type RTCIceCandidateStats = {
+    candidateType: string;
+    protocol: string;
+    port: number;
+};
 export type RTCCandidatePairStats = {
+    id: string;
     timestamp: number;
     priority?: number;
     packetsSent: number;
     packetsReceived: number;
     currentRoundTripTime: number;
     totalRoundTripTime: number;
+    nominated?: boolean;
+    state: RTCStatsIceCandidatePairState;
+    local?: RTCIceCandidateStats;
+    remote?: RTCIceCandidateStats;
 };
 export type RTCMonitorConfig = {
     peer: RTCPeer;
