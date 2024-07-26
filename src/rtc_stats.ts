@@ -19,6 +19,23 @@ export function newRTCLocalInboundStats(report: any) {
     };
 }
 
+export function newRTCLocalOutboundStats(report: any) {
+    return {
+        timestamp: report.timestamp,
+
+        // @ts-ignore: mid is missing in current version, we need bump some dependencies to fix this.
+        mid: report.mid,
+        kind: report.kind,
+        packetsSent: report.packetsSent,
+        bytesSent: report.bytesSent,
+        retransmittedPacketsSent: report.retransmittedPacketsSent,
+        retransmittedBytesSent: report.retransmittedBytesSent,
+        nackCount: report.nackCount,
+        pliCount: report.pliCount,
+        targetBitrate: report.targetBitrate,
+    };
+}
+
 export function newRTCRemoteInboundStats(report: any) {
     return {
         timestamp: report.timestamp,
@@ -75,20 +92,7 @@ export function parseSSRCStats(reports: RTCStatsReport): SSRCStats {
             stats[report.ssrc].local.in = newRTCLocalInboundStats(report);
             break;
         case 'outbound-rtp':
-            stats[report.ssrc].local.out = {
-                timestamp: report.timestamp,
-
-                // @ts-ignore: mid is missing in current version, we need bump some dependencies to fix this.
-                mid: report.mid,
-                kind: report.kind,
-                packetsSent: report.packetsSent,
-                bytesSent: report.bytesSent,
-                retransmittedPacketsSent: report.retransmittedPacketsSent,
-                retransmittedBytesSent: report.retransmittedBytesSent,
-                nackCount: report.nackCount,
-                pliCount: report.pliCount,
-                targetBitrate: report.targetBitrate,
-            };
+            stats[report.ssrc].local.out = newRTCLocalOutboundStats(report);
             break;
         case 'remote-inbound-rtp':
             stats[report.ssrc].remote.in = newRTCRemoteInboundStats(report);

@@ -13,6 +13,18 @@ export declare function newRTCLocalInboundStats(report: any): {
     jitter: any;
     jitterBufferDelay: any;
 };
+export declare function newRTCLocalOutboundStats(report: any): {
+    timestamp: any;
+    mid: any;
+    kind: any;
+    packetsSent: any;
+    bytesSent: any;
+    retransmittedPacketsSent: any;
+    retransmittedBytesSent: any;
+    nackCount: any;
+    pliCount: any;
+    targetBitrate: any;
+};
 export declare function newRTCRemoteInboundStats(report: any): {
     timestamp: any;
     kind: any;
