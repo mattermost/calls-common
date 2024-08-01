@@ -156,6 +156,17 @@ export class RTCPeer extends EventEmitter {
         this.emit('stream', new MediaStream([ev.track]));
     }
 
+    private flushICECandidates() {
+        this.logger.logDebug(`RTCPeer.flushICECandidates: flushing ${this.candidates.length} candidates`);
+        for (const candidate of this.candidates) {
+            this.logger.logDebug('RTCPeer.flushICECandidates: adding queued ice candidate');
+            this.pc?.addIceCandidate(candidate).catch((err) => {
+                this.logger.logErr('RTCPeer.flushICECandidates: failed to add candidate', err);
+            });
+        }
+        this.candidates = [];
+    }
+
     public async signal(data: string) {
         if (!this.pc) {
             throw new Error('peer has been destroyed');
@@ -183,16 +194,16 @@ export class RTCPeer extends EventEmitter {
             break;
         case 'offer':
             await this.pc.setRemoteDescription(msg);
+            if (this.candidates.length > 0) {
+                this.flushICECandidates();
+            }
             await this.pc.setLocalDescription();
             this.emit('answer', this.pc.localDescription);
             break;
         case 'answer':
             await this.pc.setRemoteDescription(msg);
-            for (const candidate of this.candidates) {
-                this.logger.logDebug('RTCPeer.signal: adding queued ice candidate');
-                this.pc.addIceCandidate(candidate).catch((err) => {
-                    this.logger.logErr('RTCPeer.signal: failed to add candidate', err);
-                });
+            if (this.candidates.length > 0) {
+                this.flushICECandidates();
             }
             break;
         default:
@@ -337,6 +348,7 @@ export class RTCPeer extends EventEmitter {
         this.pc.close();
         this.pc = null;
         this.connected = false;
+        this.candidates = [];
         clearInterval(this.pingIntervalID);
         clearTimeout(this.connTimeoutID);
     }

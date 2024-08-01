@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCCandidatePairStats} from './types';
-import {newRTCLocalInboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
+import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCLocalOutboundStats, RTCCandidatePairStats} from './types';
+import {newRTCLocalInboundStats, newRTCLocalOutboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
 import {RTCPeer} from './rtc_peer';
 
 export const mosThreshold = 3.5;
@@ -10,12 +10,17 @@ type LocalInboundStatsMap = {
     [key: string]: RTCLocalInboundStats,
 };
 
+type LocalOutboundStatsMap = {
+    [key: string]: RTCLocalOutboundStats,
+};
+
 type RemoteInboundStatsMap = {
     [key: string]: RTCRemoteInboundStats,
 };
 
 type MonitorStatsSample = {
     lastLocalIn: LocalInboundStatsMap,
+    lastLocalOut: LocalOutboundStatsMap,
     lastRemoteIn: RemoteInboundStatsMap,
 };
 
@@ -41,6 +46,7 @@ export class RTCMonitor extends EventEmitter {
         this.intervalID = null;
         this.stats = {
             lastLocalIn: {},
+            lastLocalOut: {},
             lastRemoteIn: {},
         };
     }
@@ -104,7 +110,7 @@ export class RTCMonitor extends EventEmitter {
         return stats;
     }
 
-    private getRemoteInQualityStats(remoteIn: RemoteInboundStatsMap) {
+    private getRemoteInQualityStats(remoteIn: RemoteInboundStatsMap, localOut: LocalOutboundStatsMap) {
         const stats: CallQualityStats = {};
 
         let totalTime = 0;
@@ -114,6 +120,10 @@ export class RTCMonitor extends EventEmitter {
         let totalLossRate = 0;
         for (const [ssrc, stat] of Object.entries(remoteIn)) {
             if (!this.stats.lastRemoteIn[ssrc] || stat.timestamp <= this.stats.lastRemoteIn[ssrc].timestamp) {
+                continue;
+            }
+
+            if (localOut[ssrc].packetsSent === this.stats.lastLocalOut[ssrc]?.packetsSent) {
                 continue;
             }
 
@@ -137,11 +147,9 @@ export class RTCMonitor extends EventEmitter {
 
     private processStats(reports: RTCStatsReport) {
         const localIn: LocalInboundStatsMap = {};
+        const localOut: LocalOutboundStatsMap = {};
         const remoteIn: RemoteInboundStatsMap = {};
         let candidate: RTCCandidatePairStats | undefined;
-
-        // Step 0: pre-process the raw reports a bit and turn them into usable
-        // objects.
         reports.forEach((report: any) => {
             // Collect necessary stats to make further calculations:
             // - candidate-pair: transport level metrics.
@@ -150,12 +158,16 @@ export class RTCMonitor extends EventEmitter {
 
             if (report.type === 'candidate-pair' && report.nominated) {
                 if (!candidate || (report.priority && candidate.priority && report.priority > candidate.priority)) {
-                    candidate = newRTCCandidatePairStats(report);
+                    candidate = newRTCCandidatePairStats(report, reports);
                 }
             }
 
             if (report.type === 'inbound-rtp' && report.kind === 'audio') {
                 localIn[report.ssrc] = newRTCLocalInboundStats(report);
+            }
+
+            if (report.type === 'outbound-rtp' && report.kind === 'audio') {
+                localOut[report.ssrc] = newRTCLocalOutboundStats(report);
             }
 
             if (report.type === 'remote-inbound-rtp' && report.kind === 'audio') {
@@ -181,11 +193,14 @@ export class RTCMonitor extends EventEmitter {
 
         // Step 3: if sending any stream, calculate average latency, jitter and
         // loss rate using remote stats.
-        const remoteInStats = this.getRemoteInQualityStats(remoteIn);
+        const remoteInStats = this.getRemoteInQualityStats(remoteIn, localOut);
 
         // Step 4: cache current stats for calculating deltas on next iteration.
         this.stats.lastLocalIn = {
             ...localIn,
+        };
+        this.stats.lastLocalOut = {
+            ...localOut,
         };
         this.stats.lastRemoteIn = {
             ...remoteIn,
@@ -255,6 +270,7 @@ export class RTCMonitor extends EventEmitter {
     clearCache() {
         this.stats = {
             lastLocalIn: {},
+            lastLocalOut: {},
             lastRemoteIn: {},
         };
     }
