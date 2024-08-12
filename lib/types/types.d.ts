@@ -124,6 +124,7 @@ export type CallsConfig = {
     EnableLiveCaptions: boolean;
     HostControlsAllowed: boolean;
     EnableAV1: boolean;
+    GroupCallsAllowed: boolean;
     TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {
