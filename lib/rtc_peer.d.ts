@@ -10,10 +10,12 @@ export declare class RTCPeer extends EventEmitter {
     private pingIntervalID;
     private connTimeoutID;
     private rtt;
+    private lastPingTS;
     private makingOffer;
     private candidates;
     connected: boolean;
     constructor(config: RTCPeerConfig);
+    private dcHandler;
     private initPingHandler;
     getRTT(): number;
     private onICECandidate;

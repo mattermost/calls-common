@@ -178,6 +178,7 @@ export type CallsConfig = {
     HostControlsAllowed: boolean;
     EnableAV1: boolean;
     GroupCallsAllowed: boolean;
+    EnableDCSignaling: boolean;
 
     // Admin only
     TranscribeAPI: TranscribeAPI;
