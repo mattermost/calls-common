@@ -239,4 +239,5 @@ export type CallsClientJoinData = {
     threadID?: string;
     jobID?: string;
     av1Support?: boolean;
+    dcSignaling?: boolean;
 };
