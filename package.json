@@ -26,6 +26,11 @@
         "webpack": "5.75.0"
     },
     "jest": {
-        "testEnvironment": "jsdom"
+        "testEnvironment": "jsdom",
+        "setupFilesAfterEnv": ["<rootDir>/src/setup_jest.ts"]
+    },
+    "dependencies": {
+        "@msgpack/msgpack": "^3.0.0-beta2",
+        "fflate": "^0.8.2"
     }
 }

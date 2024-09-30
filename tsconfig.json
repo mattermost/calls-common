@@ -19,5 +19,5 @@
             ]
         },
     },
-    "exclude": ["**/node_modules", "lib/**", "tmp/**", "**/*.test.js", "**/*.test.ts"]
+    "exclude": ["**/node_modules", "lib/**", "tmp/**", "**/*.test.js", "**/*.test.ts", "setup_jest*"]
 }
