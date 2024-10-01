@@ -127,6 +127,7 @@ export class RTCPeer extends EventEmitter {
 
     private onICECandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate) {
+            this.logger.logDebug('RTCPeer.onICECandidate: local candidate', JSON.stringify(ev.candidate));
             this.emit('candidate', ev.candidate);
         }
     }
@@ -159,8 +160,10 @@ export class RTCPeer extends EventEmitter {
             this.makingOffer = true;
             await this.pc?.setLocalDescription();
 
+            this.logger.logDebug('RTCPeer.onNegotiationNeeded: generated local offer', JSON.stringify(this.pc?.localDescription));
+
             if (this.config.dcSignaling && this.dc.readyState === 'open') {
-                this.logger.logDebug('connected, sending offer through data channel', this.pc?.localDescription);
+                this.logger.logDebug('connected, sending offer through data channel');
                 try {
                     this.dc.send(encodeDCMsg(this.enc, DCMessageType.SDP, this.pc?.localDescription));
                 } catch (err) {
@@ -168,7 +171,7 @@ export class RTCPeer extends EventEmitter {
                 }
             } else {
                 if (this.config.dcSignaling) {
-                    this.logger.logDebug('dc not connected, emitting offer', this.dc.readyState);
+                    this.logger.logDebug('dc not connected, emitting offer');
                 }
                 this.emit('offer', this.pc?.localDescription);
             }
@@ -215,6 +218,8 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
+        this.logger.logDebug('RTCPeer.signal: handling remote signaling data', data);
+
         const msg = JSON.parse(data);
 
         if (msg.type === 'offer' && (this.makingOffer || this.pc?.signalingState !== 'stable')) {
@@ -242,6 +247,8 @@ export class RTCPeer extends EventEmitter {
             }
             await this.pc.setLocalDescription();
 
+            this.logger.logDebug('RTCPeer.signal: generated local answer', JSON.stringify(this.pc.localDescription));
+
             if (this.config.dcSignaling && this.dc.readyState === 'open') {
                 this.logger.logDebug('connected, sending answer through data channel', this.pc.localDescription);
                 try {
@@ -251,7 +258,7 @@ export class RTCPeer extends EventEmitter {
                 }
             } else {
                 if (this.config.dcSignaling) {
-                    this.logger.logDebug('dc not connected yet, emitting answer', this.dc.readyState);
+                    this.logger.logDebug('dc not connected, emitting answer');
                 }
                 this.emit('answer', this.pc.localDescription);
             }
