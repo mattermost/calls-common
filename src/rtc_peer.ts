@@ -378,6 +378,22 @@ export class RTCPeer extends EventEmitter {
         return this.pc.getStats(null);
     }
 
+    public handleMetrics(lossRate: number, rtt: number, jitter: number) {
+        try {
+            if (lossRate >= 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.LossRate, lossRate));
+            }
+            if (rtt > 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.RoundTripTime, rtt));
+            }
+            if (jitter > 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Jitter, jitter));
+            }
+        } catch (err) {
+            this.logger.logErr('failed to send metrics through dc', err);
+        }
+    }
+
     static async getVideoCodec(mimeType: string) {
         if (RTCRtpReceiver.getCapabilities) {
             const videoCapabilities = await RTCRtpReceiver.getCapabilities('video');

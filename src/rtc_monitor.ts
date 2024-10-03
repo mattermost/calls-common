@@ -227,6 +227,7 @@ export class RTCMonitor extends EventEmitter {
         // Step 5 (or the magic step): calculate MOS (Mean Opinion Score)
         const mos = this.calculateMOS(latency!, jitter, lossRate);
         this.emit('mos', mos);
+        this.peer.handleMetrics(lossRate, this.peer.getRTT(), jitter);
         this.logger.logDebug(`RTCMonitor: MOS --> ${mos}`);
     }
 
