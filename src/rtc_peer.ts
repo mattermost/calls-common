@@ -378,13 +378,13 @@ export class RTCPeer extends EventEmitter {
         return this.pc.getStats(null);
     }
 
-    public handleMetrics(lossRate: number, rtt: number, jitter: number) {
+    public handleMetrics(lossRate: number, jitter: number) {
         try {
             if (lossRate >= 0) {
                 this.dc.send(encodeDCMsg(this.enc, DCMessageType.LossRate, lossRate));
             }
-            if (rtt > 0) {
-                this.dc.send(encodeDCMsg(this.enc, DCMessageType.RoundTripTime, rtt));
+            if (this.rtt > 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.RoundTripTime, this.rtt));
             }
             if (jitter > 0) {
                 this.dc.send(encodeDCMsg(this.enc, DCMessageType.Jitter, jitter));

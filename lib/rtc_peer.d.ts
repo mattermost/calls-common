@@ -32,7 +32,7 @@ export declare class RTCPeer extends EventEmitter {
     replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
     removeTrack(trackID: string): void;
     getStats(): Promise<RTCStatsReport>;
-    handleMetrics(lossRate: number, rtt: number, jitter: number): void;
+    handleMetrics(lossRate: number, jitter: number): void;
     static getVideoCodec(mimeType: string): Promise<RTCRtpCodecCapability | null>;
     destroy(): void;
 }

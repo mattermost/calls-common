@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCLocalOutboundStats, RTCCandidatePairStats} from './types';
-import {newRTCLocalInboundStats, newRTCLocalOutboundStats, newRTCRemoteInboundStats, newRTCCandidatePairStats} from './rtc_stats';
+import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCRemoteOutboundStats, RTCLocalOutboundStats, RTCCandidatePairStats} from './types';
+import {newRTCLocalInboundStats, newRTCLocalOutboundStats, newRTCRemoteInboundStats, newRTCRemoteOutboundStats, newRTCCandidatePairStats} from './rtc_stats';
 import {RTCPeer} from './rtc_peer';
 
 export const mosThreshold = 3.5;
@@ -18,10 +18,15 @@ type RemoteInboundStatsMap = {
     [key: string]: RTCRemoteInboundStats,
 };
 
+type RemoteOutboundStatsMap = {
+    [key: string]: RTCRemoteOutboundStats,
+}
+
 type MonitorStatsSample = {
     lastLocalIn: LocalInboundStatsMap,
     lastLocalOut: LocalOutboundStatsMap,
     lastRemoteIn: RemoteInboundStatsMap,
+    lastRemoteOut: RemoteOutboundStatsMap,
 };
 
 type CallQualityStats = {
@@ -48,6 +53,7 @@ export class RTCMonitor extends EventEmitter {
             lastLocalIn: {},
             lastLocalOut: {},
             lastRemoteIn: {},
+            lastRemoteOut: {},
         };
     }
 
@@ -69,7 +75,7 @@ export class RTCMonitor extends EventEmitter {
         });
     };
 
-    private getLocalInQualityStats(localIn: LocalInboundStatsMap) {
+    private getLocalInQualityStats(localIn: LocalInboundStatsMap, remoteOut: RemoteOutboundStatsMap) {
         const stats: CallQualityStats = {};
 
         let totalTime = 0;
@@ -89,7 +95,24 @@ export class RTCMonitor extends EventEmitter {
 
             const tsDiff = stat.timestamp - this.stats.lastLocalIn[ssrc].timestamp;
             const receivedDiff = stat.packetsReceived - this.stats.lastLocalIn[ssrc].packetsReceived;
-            const lostDiff = stat.packetsLost - this.stats.lastLocalIn[ssrc].packetsLost;
+
+            // Tracking loss on the receiving end is a bit more tricky because packets are
+            // forwarded without much modification by the server so if the sender is having issues, these are
+            // propagated to the receiver side which may believe it's having problems as a consequence.
+            //
+            // What we want to know instead is whether the local side is having issues on the
+            // server -> receiver path rather than sender -> server -> receiver one.
+            // To do this we check for any mismatches in packets sent by the remote and packets
+            // received by us.
+            //
+            // Note: it's expected for local.packetsReceived to be slightly higher than remote.packetsSent
+            // since reports are generated at different times, with the local one likely being more time-accurate.
+            //
+            // Having remote.packetsSent higher than local.packetsReceived is instead a fairly good sign
+            // some packets have been lost in transit.
+            const potentiallyLost = remoteOut[ssrc].packetsSent - stat.packetsReceived;
+            const prevPotentiallyLost = this.stats.lastRemoteOut[ssrc].packetsSent - this.stats.lastLocalIn[ssrc].packetsReceived;
+            const lostDiff = prevPotentiallyLost >= 0 && potentiallyLost > prevPotentiallyLost ? potentiallyLost - prevPotentiallyLost : 0;
 
             totalTime += tsDiff;
             totalPacketsReceived += receivedDiff;
@@ -131,7 +154,7 @@ export class RTCMonitor extends EventEmitter {
             totalTime += tsDiff;
             totalRemoteJitter += stat.jitter;
             totalRTT += stat.roundTripTime;
-            totalLossRate = stat.fractionLost;
+            totalLossRate += stat.fractionLost;
             totalRemoteStats++;
         }
 
@@ -149,6 +172,7 @@ export class RTCMonitor extends EventEmitter {
         const localIn: LocalInboundStatsMap = {};
         const localOut: LocalOutboundStatsMap = {};
         const remoteIn: RemoteInboundStatsMap = {};
+        const remoteOut: RemoteOutboundStatsMap = {};
         let candidate: RTCCandidatePairStats | undefined;
         reports.forEach((report: any) => {
             // Collect necessary stats to make further calculations:
@@ -173,6 +197,10 @@ export class RTCMonitor extends EventEmitter {
             if (report.type === 'remote-inbound-rtp' && report.kind === 'audio') {
                 remoteIn[report.ssrc] = newRTCRemoteInboundStats(report);
             }
+
+            if (report.type === 'remote-outbound-rtp' && report.kind === 'audio') {
+                remoteOut[report.ssrc] = newRTCRemoteOutboundStats(report);
+            }
         });
 
         if (!candidate) {
@@ -189,7 +217,7 @@ export class RTCMonitor extends EventEmitter {
         }
 
         // Step 2: if receiving any stream, calculate average jitter and loss rate using local stats.
-        const localInStats = this.getLocalInQualityStats(localIn);
+        const localInStats = this.getLocalInQualityStats(localIn, remoteOut);
 
         // Step 3: if sending any stream, calculate average latency, jitter and
         // loss rate using remote stats.
@@ -204,6 +232,9 @@ export class RTCMonitor extends EventEmitter {
         };
         this.stats.lastRemoteIn = {
             ...remoteIn,
+        };
+        this.stats.lastRemoteOut = {
+            ...remoteOut,
         };
 
         if (typeof transportLatency === 'undefined' && typeof remoteInStats.avgLatency === 'undefined') {
@@ -227,7 +258,7 @@ export class RTCMonitor extends EventEmitter {
         // Step 5 (or the magic step): calculate MOS (Mean Opinion Score)
         const mos = this.calculateMOS(latency!, jitter, lossRate);
         this.emit('mos', mos);
-        this.peer.handleMetrics(lossRate, this.peer.getRTT(), jitter);
+        this.peer.handleMetrics(lossRate, jitter / 1000);
         this.logger.logDebug(`RTCMonitor: MOS --> ${mos}`);
     }
 
@@ -273,6 +304,7 @@ export class RTCMonitor extends EventEmitter {
             lastLocalIn: {},
             lastLocalOut: {},
             lastRemoteIn: {},
+            lastRemoteOut: {},
         };
     }
 }
