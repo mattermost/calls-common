@@ -178,6 +178,7 @@ export type CallsConfig = {
     HostControlsAllowed: boolean;
     EnableAV1: boolean;
     GroupCallsAllowed: boolean;
+    EnableDCSignaling: boolean;
 
     // Admin only
     TranscribeAPI: TranscribeAPI;
@@ -327,4 +328,5 @@ export type CallsClientJoinData = {
     jobID?: string;
 
     av1Support?: boolean;
+    dcSignaling?: boolean;
 }

@@ -7,13 +7,17 @@ export declare class RTCPeer extends EventEmitter {
     private dc;
     private readonly senders;
     private readonly logger;
+    private enc;
+    private dec;
     private pingIntervalID;
     private connTimeoutID;
     private rtt;
+    private lastPingTS;
     private makingOffer;
     private candidates;
     connected: boolean;
     constructor(config: RTCPeerConfig);
+    private dcHandler;
     private initPingHandler;
     getRTT(): number;
     private onICECandidate;
@@ -28,6 +32,7 @@ export declare class RTCPeer extends EventEmitter {
     replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
     removeTrack(trackID: string): void;
     getStats(): Promise<RTCStatsReport>;
+    handleMetrics(lossRate: number, jitter: number): void;
     static getVideoCodec(mimeType: string): Promise<RTCRtpCodecCapability | null>;
     destroy(): void;
 }

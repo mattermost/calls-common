@@ -125,6 +125,7 @@ export type CallsConfig = {
     HostControlsAllowed: boolean;
     EnableAV1: boolean;
     GroupCallsAllowed: boolean;
+    EnableDCSignaling: boolean;
     TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {
@@ -238,4 +239,5 @@ export type CallsClientJoinData = {
     threadID?: string;
     jobID?: string;
     av1Support?: boolean;
+    dcSignaling?: boolean;
 };

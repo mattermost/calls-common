@@ -7,6 +7,7 @@ export type RTCPeerConfig = {
     logger: Logger;
     simulcast?: boolean;
     connTimeoutMs?: number;
+    dcSignaling?: boolean;
 }
 
 export type SSRCStats = {
