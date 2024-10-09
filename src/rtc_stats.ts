@@ -47,6 +47,15 @@ export function newRTCRemoteInboundStats(report: any) {
     };
 }
 
+export function newRTCRemoteOutboundStats(report: any) {
+    return {
+        timestamp: report.timestamp,
+        kind: report.kind,
+        packetsSent: report.packetsSent,
+        bytesSent: report.bytesSent,
+    };
+}
+
 export function newRTCCandidatePairStats(report: any, reports: RTCStatsReport): RTCCandidatePairStats {
     let local;
     let remote;
@@ -98,12 +107,7 @@ export function parseSSRCStats(reports: RTCStatsReport): SSRCStats {
             stats[report.ssrc].remote.in = newRTCRemoteInboundStats(report);
             break;
         case 'remote-outbound-rtp':
-            stats[report.ssrc].remote.out = {
-                timestamp: report.timestamp,
-                kind: report.kind,
-                packetsSent: report.packetsSent,
-                bytesSent: report.bytesSent,
-            };
+            stats[report.ssrc].remote.out = newRTCRemoteOutboundStats(report);
             break;
         }
     });

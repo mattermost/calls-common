@@ -5,12 +5,16 @@ import {DCMessageType, DCMessageSDP} from './types';
 
 export function encodeDCMsg(enc: Encoder, msgType: DCMessageType, payload?: any) {
     const mt = enc.encode(msgType);
-    if (!payload) {
+    if (typeof payload === 'undefined') {
         return mt;
     }
 
-    const pl = msgType === DCMessageType.SDP ?
-        enc.encode(zlibSync(strToU8(JSON.stringify(payload)))) : enc.encode(JSON.stringify(payload));
+    let pl;
+    if (msgType === DCMessageType.SDP) {
+        pl = enc.encode(zlibSync(strToU8(JSON.stringify(payload))));
+    } else {
+        pl = enc.encode(payload);
+    }
 
     // Flat encoding
     const msg = new Uint8Array(mt.byteLength + pl.byteLength);
