@@ -33,6 +33,12 @@ export declare function newRTCRemoteInboundStats(report: any): {
     jitter: any;
     roundTripTime: any;
 };
+export declare function newRTCRemoteOutboundStats(report: any): {
+    timestamp: any;
+    kind: any;
+    packetsSent: any;
+    bytesSent: any;
+};
 export declare function newRTCCandidatePairStats(report: any, reports: RTCStatsReport): RTCCandidatePairStats;
 export declare function parseSSRCStats(reports: RTCStatsReport): SSRCStats;
 export declare function parseICEStats(reports: RTCStatsReport): ICEStats;

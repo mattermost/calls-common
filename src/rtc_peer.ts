@@ -1,6 +1,10 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCPeerConfig, RTCTrackOptions} from './types';
+import {Encoder, Decoder} from '@msgpack/msgpack';
+
+import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType} from './types';
+
+import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
 import {isFirefox, getFirefoxVersion} from './utils';
 
@@ -28,6 +32,8 @@ export class RTCPeer extends EventEmitter {
     private dc: RTCDataChannel;
     private readonly senders: { [key: string]: RTCRtpSender[] };
     private readonly logger: Logger;
+    private enc: Encoder;
+    private dec: Decoder;
 
     private pingIntervalID: ReturnType<typeof setInterval>;
     private connTimeoutID: ReturnType<typeof setTimeout>;
@@ -55,6 +61,9 @@ export class RTCPeer extends EventEmitter {
         this.pc.onconnectionstatechange = () => this.onConnectionStateChange();
         this.pc.ontrack = (ev) => this.onTrack(ev);
 
+        this.enc = new Encoder();
+        this.dec = new Decoder();
+
         this.connected = false;
         const connTimeout = config.connTimeoutMs || rtcConnTimeoutMsDefault;
         this.connTimeoutID = setTimeout(() => {
@@ -68,6 +77,7 @@ export class RTCPeer extends EventEmitter {
         // - Calculate transport latency through simple ping/pong sequences.
         // - Use this communication channel for further negotiation (to be implemented).
         this.dc = this.pc.createDataChannel('calls-dc');
+        this.dc.binaryType = 'arraybuffer';
         this.dc.onmessage = (ev) => this.dcHandler(ev);
 
         this.pingIntervalID = this.initPingHandler();
@@ -76,13 +86,25 @@ export class RTCPeer extends EventEmitter {
     }
 
     private dcHandler(ev: MessageEvent) {
-        if (ev.data === 'pong' && this.lastPingTS > 0) {
-            this.rtt = (performance.now() - this.lastPingTS) / 1000;
-        } else if (ev.data !== 'pong') {
-            this.logger.logDebug('RTCPeer.dcHandler: received sdp through DC');
-            this.signal(ev.data).catch((err) => {
-                this.logger.logErr('RTCPeer.dcHandler: failed to signal sdp', err);
-            });
+        try {
+            const {mt, payload} = decodeDCMsg(this.dec, ev.data);
+            switch (mt) {
+            case DCMessageType.Pong:
+                if (this.lastPingTS > 0) {
+                    this.rtt = (performance.now() - this.lastPingTS) / 1000;
+                }
+                break;
+            case DCMessageType.SDP:
+                this.logger.logDebug('RTCPeer.dcHandler: received sdp dc message');
+                this.signal(payload as string).catch((err) => {
+                    this.logger.logErr('RTCPeer.dcHandler: failed to signal sdp', err);
+                });
+                break;
+            default:
+                this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
+            }
+        } catch (err) {
+            this.logger.logErr('failed to decode dc message', err);
         }
     }
 
@@ -92,7 +114,7 @@ export class RTCPeer extends EventEmitter {
                 return;
             }
             this.lastPingTS = performance.now();
-            this.dc.send('ping');
+            this.dc.send(encodeDCMsg(this.enc, DCMessageType.Ping));
         }, pingIntervalMs);
     }
 
@@ -105,6 +127,7 @@ export class RTCPeer extends EventEmitter {
 
     private onICECandidate(ev: RTCPeerConnectionIceEvent) {
         if (ev.candidate) {
+            this.logger.logDebug('RTCPeer.onICECandidate: local candidate', JSON.stringify(ev.candidate));
             this.emit('candidate', ev.candidate);
         }
     }
@@ -137,16 +160,18 @@ export class RTCPeer extends EventEmitter {
             this.makingOffer = true;
             await this.pc?.setLocalDescription();
 
+            this.logger.logDebug('RTCPeer.onNegotiationNeeded: generated local offer', JSON.stringify(this.pc?.localDescription));
+
             if (this.config.dcSignaling && this.dc.readyState === 'open') {
-                this.logger.logDebug('connected, sending offer through data channel', this.pc?.localDescription);
+                this.logger.logDebug('connected, sending offer through data channel');
                 try {
-                    this.dc.send(JSON.stringify(this.pc?.localDescription));
+                    this.dc.send(encodeDCMsg(this.enc, DCMessageType.SDP, this.pc?.localDescription));
                 } catch (err) {
                     this.logger.logErr('failed to send on datachannel', err);
                 }
             } else {
                 if (this.config.dcSignaling) {
-                    this.logger.logDebug('dc not connected, emitting offer', this.dc.readyState);
+                    this.logger.logDebug('dc not connected, emitting offer');
                 }
                 this.emit('offer', this.pc?.localDescription);
             }
@@ -193,6 +218,8 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
+        this.logger.logDebug('RTCPeer.signal: handling remote signaling data', data);
+
         const msg = JSON.parse(data);
 
         if (msg.type === 'offer' && (this.makingOffer || this.pc?.signalingState !== 'stable')) {
@@ -220,16 +247,18 @@ export class RTCPeer extends EventEmitter {
             }
             await this.pc.setLocalDescription();
 
+            this.logger.logDebug('RTCPeer.signal: generated local answer', JSON.stringify(this.pc.localDescription));
+
             if (this.config.dcSignaling && this.dc.readyState === 'open') {
                 this.logger.logDebug('connected, sending answer through data channel', this.pc.localDescription);
                 try {
-                    this.dc.send(JSON.stringify(this.pc.localDescription));
+                    this.dc.send(encodeDCMsg(this.enc, DCMessageType.SDP, this.pc.localDescription));
                 } catch (err) {
                     this.logger.logErr('failed to send on datachannel', err);
                 }
             } else {
                 if (this.config.dcSignaling) {
-                    this.logger.logDebug('dc not connected yet, emitting answer', this.dc.readyState);
+                    this.logger.logDebug('dc not connected, emitting answer');
                 }
                 this.emit('answer', this.pc.localDescription);
             }
@@ -347,6 +376,22 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
         return this.pc.getStats(null);
+    }
+
+    public handleMetrics(lossRate: number, jitter: number) {
+        try {
+            if (lossRate >= 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.LossRate, lossRate));
+            }
+            if (this.rtt > 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.RoundTripTime, this.rtt));
+            }
+            if (jitter > 0) {
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Jitter, jitter));
+            }
+        } catch (err) {
+            this.logger.logErr('failed to send metrics through dc', err);
+        }
     }
 
     static async getVideoCodec(mimeType: string) {

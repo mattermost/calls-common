@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir -p tmp
           npx tsc --outDir tmp
-          diff -r lib tmp
+          diff -x 'setup_jest*' -r lib tmp
           rm -rf tmp
   test:
     runs-on: ubuntu-22.04
