@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 
-import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCRemoteOutboundStats, RTCLocalOutboundStats, RTCCandidatePairStats} from './types';
-import {newRTCLocalInboundStats, newRTCLocalOutboundStats, newRTCRemoteInboundStats, newRTCRemoteOutboundStats, newRTCCandidatePairStats} from './rtc_stats';
+import {Logger, RTCMonitorConfig, RTCLocalInboundStats, RTCRemoteInboundStats, RTCRemoteOutboundStats, RTCLocalOutboundStats} from './types';
+import {newRTCLocalInboundStats, newRTCLocalOutboundStats, newRTCRemoteInboundStats, newRTCRemoteOutboundStats} from './rtc_stats';
 import {RTCPeer} from './rtc_peer';
 
 export const mosThreshold = 3.5;
@@ -33,7 +33,6 @@ type CallQualityStats = {
     avgTime?: number,
     avgLossRate?: number,
     avgJitter?: number,
-    avgLatency?: number,
 };
 
 export class RTCMonitor extends EventEmitter {
@@ -123,7 +122,7 @@ export class RTCMonitor extends EventEmitter {
 
         if (totalLocalStats > 0) {
             stats.avgTime = totalTime / totalLocalStats;
-            stats.avgJitter = (totalJitter / totalLocalStats) * 1000;
+            stats.avgJitter = totalJitter / totalLocalStats;
         }
 
         if (totalPacketsReceived > 0) {
@@ -137,7 +136,6 @@ export class RTCMonitor extends EventEmitter {
         const stats: CallQualityStats = {};
 
         let totalTime = 0;
-        let totalRTT = 0;
         let totalRemoteJitter = 0;
         let totalRemoteStats = 0;
         let totalLossRate = 0;
@@ -153,15 +151,13 @@ export class RTCMonitor extends EventEmitter {
             const tsDiff = stat.timestamp - this.stats.lastRemoteIn[ssrc].timestamp;
             totalTime += tsDiff;
             totalRemoteJitter += stat.jitter;
-            totalRTT += stat.roundTripTime;
             totalLossRate += stat.fractionLost;
             totalRemoteStats++;
         }
 
         if (totalRemoteStats > 0) {
             stats.avgTime = totalTime / totalRemoteStats;
-            stats.avgJitter = (totalRemoteJitter / totalRemoteStats) * 1000;
-            stats.avgLatency = (totalRTT / totalRemoteStats) * (1000 / 2);
+            stats.avgJitter = totalRemoteJitter / totalRemoteStats;
             stats.avgLossRate = totalLossRate / totalRemoteStats;
         }
 
@@ -173,18 +169,10 @@ export class RTCMonitor extends EventEmitter {
         const localOut: LocalOutboundStatsMap = {};
         const remoteIn: RemoteInboundStatsMap = {};
         const remoteOut: RemoteOutboundStatsMap = {};
-        let candidate: RTCCandidatePairStats | undefined;
         reports.forEach((report: any) => {
             // Collect necessary stats to make further calculations:
-            // - candidate-pair: transport level metrics.
             // - inbound-rtp: metrics for incoming RTP media streams.
             // - remote-inbound-rtp: metrics for outgoing RTP media streams as received by the remote endpoint.
-
-            if (report.type === 'candidate-pair' && report.nominated) {
-                if (!candidate || (report.priority && candidate.priority && report.priority > candidate.priority)) {
-                    candidate = newRTCCandidatePairStats(report, reports);
-                }
-            }
 
             if (report.type === 'inbound-rtp' && report.kind === 'audio') {
                 localIn[report.ssrc] = newRTCLocalInboundStats(report);
@@ -203,18 +191,9 @@ export class RTCMonitor extends EventEmitter {
             }
         });
 
-        if (!candidate) {
-            this.logger.logDebug('RTCMonitor: no valid candidate was found');
-            return;
-        }
-
-        // Step 1: get transport latency from the in-use candidate pair stats, if present.
-        let transportLatency;
-
-        // currentRoundTripTime could be missing in the original report (e.g. on Firefox) and implicitly coverted to NaN.
-        if (!isNaN(candidate.currentRoundTripTime)) {
-            transportLatency = (candidate.currentRoundTripTime * 1000) / 2;
-        }
+        // Step 1: get transport round-trip time from the peer.
+        // This is calculated through ping/pong messages on the data channel.
+        const transportRTT = this.peer.getRTT();
 
         // Step 2: if receiving any stream, calculate average jitter and loss rate using local stats.
         const localInStats = this.getLocalInQualityStats(localIn, remoteOut);
@@ -237,10 +216,6 @@ export class RTCMonitor extends EventEmitter {
             ...remoteOut,
         };
 
-        if (typeof transportLatency === 'undefined' && typeof remoteInStats.avgLatency === 'undefined') {
-            transportLatency = this.peer.getRTT() / 2;
-        }
-
         if (typeof localInStats.avgJitter === 'undefined' && typeof remoteInStats.avgJitter === 'undefined') {
             this.logger.logDebug('RTCMonitor: jitter could not be calculated');
             return;
@@ -253,17 +228,18 @@ export class RTCMonitor extends EventEmitter {
 
         const jitter = Math.max(localInStats.avgJitter || 0, remoteInStats.avgJitter || 0);
         const lossRate = Math.max(localInStats.avgLossRate || 0, remoteInStats.avgLossRate || 0);
-        const latency = transportLatency ?? remoteInStats.avgLatency;
+        const latency = transportRTT / 2; // approximating one-way latency as RTT/2
 
         // Step 5 (or the magic step): calculate MOS (Mean Opinion Score)
-        const mos = this.calculateMOS(latency!, jitter, lossRate);
+        // Latency and jitter values are expected to be in ms rather than seconds.
+        const mos = this.calculateMOS(latency * 1000, jitter * 1000, lossRate);
         this.emit('mos', mos);
-        this.peer.handleMetrics(lossRate, jitter / 1000);
+        this.peer.handleMetrics(lossRate, jitter);
         this.logger.logDebug(`RTCMonitor: MOS --> ${mos}`);
     }
 
     private calculateMOS(latency: number, jitter: number, lossRate: number) {
-        this.logger.logDebug(`RTCMonitor: MOS inputs --> latency: ${latency} jitter: ${jitter} loss: ${lossRate}`);
+        this.logger.logDebug(`RTCMonitor: MOS inputs --> latency: ${latency.toFixed(1)}ms jitter: ${jitter.toFixed(1)}ms loss: ${(lossRate * 100).toFixed(2)}%`);
 
         let R = 0;
         const effectiveLatency = latency + (2 * jitter) + 10.0;
