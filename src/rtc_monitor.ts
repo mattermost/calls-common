@@ -6,27 +6,16 @@ import {RTCPeer} from './rtc_peer';
 
 export const mosThreshold = 3.5;
 
-type LocalInboundStatsMap = {
-    [key: string]: RTCLocalInboundStats,
-};
-
-type LocalOutboundStatsMap = {
-    [key: string]: RTCLocalOutboundStats,
-};
-
-type RemoteInboundStatsMap = {
-    [key: string]: RTCRemoteInboundStats,
-};
-
-type RemoteOutboundStatsMap = {
-    [key: string]: RTCRemoteOutboundStats,
-}
+type LocalInboundStatsMap = Record<string, RTCLocalInboundStats>;
+type LocalOutboundStatsMap = Record<string, RTCLocalOutboundStats>;
+type RemoteInboundStatsMap = Record<string, RTCRemoteInboundStats>;
+type RemoteOutboundStatsMap = Record<string, RTCRemoteOutboundStats>;
 
 type MonitorStatsSample = {
-    lastLocalIn: LocalInboundStatsMap,
-    lastLocalOut: LocalOutboundStatsMap,
-    lastRemoteIn: RemoteInboundStatsMap,
-    lastRemoteOut: RemoteOutboundStatsMap,
+    lastLocalIn: Record<string, RTCLocalInboundStats | undefined>,
+    lastLocalOut: Record<string, RTCLocalOutboundStats | undefined>,
+    lastRemoteIn: Record<string, RTCRemoteInboundStats | undefined>,
+    lastRemoteOut: Record<string, RTCRemoteOutboundStats | undefined>,
 };
 
 type CallQualityStats = {
@@ -84,7 +73,7 @@ export class RTCMonitor extends EventEmitter {
         let totalLocalStats = 0;
 
         for (const [ssrc, stat] of Object.entries(localIn)) {
-            if (!this.stats.lastLocalIn[ssrc] || stat.timestamp <= this.stats.lastLocalIn[ssrc].timestamp) {
+            if (!this.stats.lastLocalIn[ssrc] || !this.stats.lastRemoteOut[ssrc] || stat.timestamp <= this.stats.lastLocalIn[ssrc].timestamp) {
                 continue;
             }
 
