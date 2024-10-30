@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from 'events';
 import { RTCPeerConfig, RTCTrackOptions } from './types';
 export declare class RTCPeer extends EventEmitter {
@@ -33,6 +32,6 @@ export declare class RTCPeer extends EventEmitter {
     removeTrack(trackID: string): void;
     getStats(): Promise<RTCStatsReport>;
     handleMetrics(lossRate: number, jitter: number): void;
-    static getVideoCodec(mimeType: string): Promise<RTCRtpCodecCapability | null>;
+    static getVideoCodec(mimeType: string): Promise<RTCRtpCodec | null>;
     destroy(): void;
 }

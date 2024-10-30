@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from 'events';
 import { RTCMonitorConfig } from './types';
 export declare const mosThreshold = 3.5;

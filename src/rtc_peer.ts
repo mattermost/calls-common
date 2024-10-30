@@ -6,7 +6,7 @@ import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType} from './types';
 
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
-import {isFirefox, getFirefoxVersion} from './utils';
+import {isFirefox} from './utils';
 
 const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
@@ -289,38 +289,19 @@ export class RTCPeer extends EventEmitter {
             // TODO: check whether track is coming from screenshare when we
             // start supporting video.
 
-            if (isFirefox() && getFirefoxVersion() < 110) {
-                // DEPRECATED: we should consider removing this as sendEncodings
-                // has been supported since v110.
-                sender = await this.pc.addTrack(track, stream!);
-                const params = await sender.getParameters();
-                params.encodings = FallbackScreenEncodings;
-                await sender.setParameters(params);
+            this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
+            const trx = this.pc.addTransceiver(track, {
+                direction: 'sendonly',
+                sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
+                streams: [stream!],
+            });
 
-                // We need to explicitly set the transceiver direction or Firefox
-                // will default to sendrecv which will cause problems when removing the track.
-                for (const trx of this.pc.getTransceivers()) {
-                    if (trx.sender === sender) {
-                        this.logger.logDebug('RTCPeer.addTrack: setting transceiver direction to sendonly');
-                        trx.direction = 'sendonly';
-                        break;
-                    }
-                }
-            } else {
-                this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
-                const trx = this.pc.addTransceiver(track, {
-                    direction: 'sendonly',
-                    sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
-                    streams: [stream!],
-                });
-
-                if (opts?.codec && trx.setCodecPreferences) {
-                    this.logger.logDebug('setting video codec preference', opts.codec);
-                    trx.setCodecPreferences([opts.codec]);
-                }
-
-                sender = trx.sender;
+            if (opts?.codec && trx.setCodecPreferences) {
+                this.logger.logDebug('setting video codec preference', opts.codec);
+                trx.setCodecPreferences([opts.codec]);
             }
+
+            sender = trx.sender;
         } else {
             sender = await this.pc.addTrack(track, stream);
         }
