@@ -259,6 +259,28 @@ export type Caption = {
     file_id: string;
 };
 
+export function isCaption(obj: unknown): obj is Caption {
+    if (typeof obj !== 'object' || obj === null) {
+        return false;
+    }
+
+    const caption = obj as Caption;
+
+    if (typeof caption.title !== 'string') {
+        return false;
+    }
+
+    if (typeof caption.language !== 'string') {
+        return false;
+    }
+
+    if (typeof caption.file_id !== 'string') {
+        return false;
+    }
+
+    return true;
+}
+
 export type JobStopData = {
     job_id: string;
 };
@@ -269,6 +291,32 @@ export type CallJobMetadata = {
     tr_id?: string;
     rec_id?: string;
 };
+
+export function isCallJobMetadata(obj: unknown): obj is CallJobMetadata {
+    if (typeof obj !== 'object' || obj === null) {
+        return false;
+    }
+
+    const metadata = obj as CallJobMetadata;
+
+    if (typeof metadata.file_id !== 'string') {
+        return false;
+    }
+
+    if (typeof metadata.post_id !== 'string') {
+        return false;
+    }
+
+    if (metadata.tr_id !== undefined && typeof metadata.tr_id !== 'string') {
+        return false;
+    }
+
+    if (metadata.rec_id !== undefined && typeof metadata.rec_id !== 'string') {
+        return false;
+    }
+
+    return true;
+}
 
 export type CallRecordingPropsMap = {
     [key: string]: CallJobMetadata;
