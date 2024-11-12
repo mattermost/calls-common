@@ -187,6 +187,7 @@ export type Caption = {
     language: string;
     file_id: string;
 };
+export declare function isCaption(obj: unknown): obj is Caption;
 export type JobStopData = {
     job_id: string;
 };
@@ -196,6 +197,7 @@ export type CallJobMetadata = {
     tr_id?: string;
     rec_id?: string;
 };
+export declare function isCallJobMetadata(obj: unknown): obj is CallJobMetadata;
 export type CallRecordingPropsMap = {
     [key: string]: CallJobMetadata;
 };
