@@ -307,10 +307,12 @@ export function isCallJobMetadata(obj: unknown): obj is CallJobMetadata {
         return false;
     }
 
+    // eslint-disable-next-line no-undefined
     if (metadata.tr_id !== undefined && typeof metadata.tr_id !== 'string') {
         return false;
     }
 
+    // eslint-disable-next-line no-undefined
     if (metadata.rec_id !== undefined && typeof metadata.rec_id !== 'string') {
         return false;
     }
