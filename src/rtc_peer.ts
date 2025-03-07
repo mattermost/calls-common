@@ -11,6 +11,8 @@ import {isFirefox} from './utils';
 const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
 const pingIntervalMs = 1000;
+const signalingLockTimeoutMs = 5000;
+const signalingLockCheckIntervalMs = 100;
 
 enum SimulcastLevel {
     High = 'h',
@@ -30,6 +32,9 @@ export class RTCPeer extends EventEmitter {
     private config: RTCPeerConfig;
     private pc: RTCPeerConnection | null;
     private dc: RTCDataChannel;
+    private dcNegotiated = false;
+    private dcNegotiationStarted = false;
+    private dcLockResponseCb: ((aquired: boolean) => void) | null = null;
     private readonly senders: { [key: string]: RTCRtpSender[] };
     private readonly logger: Logger;
     private enc: Encoder;
@@ -56,6 +61,7 @@ export class RTCPeer extends EventEmitter {
 
         this.pc = new RTCPeerConnection(config);
         this.pc.onnegotiationneeded = () => this.onNegotiationNeeded();
+
         this.pc.onicecandidate = (ev) => this.onICECandidate(ev);
         this.pc.oniceconnectionstatechange = () => this.onICEConnectionStateChange();
         this.pc.onconnectionstatechange = () => this.onConnectionStateChange();
@@ -99,6 +105,11 @@ export class RTCPeer extends EventEmitter {
                 this.signal(payload as string).catch((err) => {
                     this.logger.logErr('RTCPeer.dcHandler: failed to signal sdp', err);
                 });
+                break;
+            case DCMessageType.Lock:
+                this.logger.logDebug('RTCPeer.dcHandler: received lock response', payload);
+                this.dcLockResponseCb?.(payload as boolean);
+                this.dcLockResponseCb = null;
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
@@ -155,28 +166,77 @@ export class RTCPeer extends EventEmitter {
         this.logger.logDebug(`RTCPeer: ICE connection state change -> ${this.pc?.iceConnectionState}`);
     }
 
+    private grabSignalingLock(timeoutMs: number) {
+        return new Promise<boolean>((resolve, reject) => {
+            this.dcLockResponseCb = (aquired) => {
+                resolve(aquired);
+            };
+            setTimeout(() => reject(new Error('timed out waiting for lock')), timeoutMs);
+            this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
+        });
+    }
+
     private async onNegotiationNeeded() {
+        // Closed client case.
+        if (!this.pc) {
+            return;
+        }
+
+        // First ever negotiation is for establishing the data channel which is then used for further synchronization.
+        if (!this.dcNegotiationStarted) {
+            this.dcNegotiationStarted = true;
+            this.makeOffer();
+            return;
+        }
+
+        // If we haven't fully negotiated the data channel or if this isn't ready yet we wait.
+        if (!this.dcNegotiated || this.dc.readyState !== 'open') {
+            this.logger.logDebug('RTCPeer.onNegotiationNeeded: dc not negotiated or not open, requeing');
+            setTimeout(() => this.onNegotiationNeeded(), signalingLockCheckIntervalMs);
+            return;
+        }
+
+        const locked = await this.grabSignalingLock(signalingLockTimeoutMs);
+
+        // If we failed to acquire the lock we wait and try again. It means the server side is in the
+        // process of sending us an offer.
+        if (!locked) {
+            this.logger.logDebug('RTCPeer.onNegotiationNeeded: signaling locked not acquired, requeing');
+            setTimeout(() => this.onNegotiationNeeded(), signalingLockCheckIntervalMs);
+            return;
+        }
+
+        // Lock acquired, we can now proceed with making the offer.
+        this.logger.logDebug('RTCPeer.onNegotiationNeeded: signaling locked acquired');
+        await this.makeOffer();
+    }
+
+    private async makeOffer() {
         try {
             this.makingOffer = true;
             await this.pc?.setLocalDescription();
 
-            this.logger.logDebug('RTCPeer.onNegotiationNeeded: generated local offer', JSON.stringify(this.pc?.localDescription));
+            this.logger.logDebug('RTCPeer.makeOffer: generated local offer', JSON.stringify(this.pc?.localDescription));
 
             if (this.config.dcSignaling && this.dc.readyState === 'open') {
-                this.logger.logDebug('connected, sending offer through data channel');
+                this.logger.logDebug('RTCPeer.makeOffer: connected, sending offer through data channel');
                 try {
                     this.dc.send(encodeDCMsg(this.enc, DCMessageType.SDP, this.pc?.localDescription));
                 } catch (err) {
-                    this.logger.logErr('failed to send on datachannel', err);
+                    this.logger.logErr('RTCPeer.makeOffer: failed to send on datachannel', err);
                 }
             } else {
                 if (this.config.dcSignaling) {
-                    this.logger.logDebug('dc not connected, emitting offer');
+                    this.logger.logDebug('RTCPeer.makeOffer: dc not connected, emitting offer');
                 }
                 this.emit('offer', this.pc?.localDescription);
             }
         } catch (err) {
             this.emit('error', err);
+            if (this.dcNegotiated && this.dc.readyState === 'open') {
+                this.logger.logErr('RTCPeer.makeOffer: unlocking on error');
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
+            }
         } finally {
             this.makingOffer = false;
         }
@@ -269,6 +329,16 @@ export class RTCPeer extends EventEmitter {
             if (this.candidates.length > 0) {
                 this.flushICECandidates();
             }
+
+            if (!this.dcNegotiated) {
+                this.dcNegotiated = true;
+            } else if (this.dc.readyState === 'open') {
+                this.logger.logDebug('RTCPeer.signal: unlocking signaling lock');
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
+            } else {
+                this.logger.logWarn('RTCPeer.signal: dc not open upon receiving answer');
+            }
+
             break;
         default:
             throw new Error('invalid signaling data received');

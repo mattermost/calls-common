@@ -36,4 +36,30 @@ describe('dcMsg', () => {
         expect(mt).toEqual(DCMessageType.SDP);
         expect(JSON.parse(payload)).toEqual(sdp);
     });
+
+    it('lock without payload', () => {
+        const lockMsg = encodeDCMsg(enc, DCMessageType.Lock);
+        expect(lockMsg).toEqual(new Uint8Array([DCMessageType.Lock]));
+
+        const {mt, payload} = decodeDCMsg(dec, lockMsg);
+        expect(mt).toEqual(DCMessageType.Lock);
+        expect(payload).toBeUndefined();
+    });
+
+    it('lock with payload', () => {
+        const lockMsg = encodeDCMsg(enc, DCMessageType.Lock, true);
+
+        const {mt, payload} = decodeDCMsg(dec, lockMsg);
+        expect(mt).toEqual(DCMessageType.Lock);
+        expect(payload).toEqual(true);
+    });
+
+    it('unlock', () => {
+        const unlockMsg = encodeDCMsg(enc, DCMessageType.Unlock);
+        expect(unlockMsg).toEqual(new Uint8Array([DCMessageType.Unlock]));
+
+        const {mt, payload} = decodeDCMsg(dec, unlockMsg);
+        expect(mt).toEqual(DCMessageType.Unlock);
+        expect(payload).toBeUndefined();
+    });
 });
