@@ -41,6 +41,10 @@ export type UserScreenOnOffData = {
     userID: string;
     session_id: string;
 } & BaseData;
+export type UserVideoOnOffData = {
+    userID: string;
+    session_id: string;
+} & BaseData;
 export type UserRaiseUnraiseHandData = {
     userID: string;
     session_id: string;
@@ -126,6 +130,7 @@ export type CallsConfig = {
     EnableAV1: boolean;
     GroupCallsAllowed: boolean;
     EnableDCSignaling: boolean;
+    EnableVideo: boolean;
     TranscribeAPI: TranscribeAPI;
 };
 export type Reaction = UserReactionData & {
@@ -143,6 +148,7 @@ export type SessionState = {
 };
 export type UserSessionState = SessionState & {
     voice?: boolean;
+    video?: boolean;
     reaction?: Reaction;
 };
 export type CallState = {

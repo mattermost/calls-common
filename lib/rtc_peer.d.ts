@@ -18,6 +18,7 @@ export declare class RTCPeer extends EventEmitter {
     private makingOffer;
     private candidates;
     connected: boolean;
+    private mediaMap;
     constructor(config: RTCPeerConfig);
     private dcHandler;
     private initPingHandler;
