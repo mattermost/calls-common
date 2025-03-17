@@ -109,7 +109,6 @@ export class RTCPeer extends EventEmitter {
             case DCMessageType.Lock:
                 this.logger.logDebug('RTCPeer.dcHandler: received lock response', payload);
                 this.dcLockResponseCb?.(payload as boolean);
-                this.dcLockResponseCb = null;
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
@@ -169,9 +168,15 @@ export class RTCPeer extends EventEmitter {
     private grabSignalingLock(timeoutMs: number) {
         return new Promise<boolean>((resolve, reject) => {
             this.dcLockResponseCb = (aquired) => {
+                this.dcLockResponseCb = null;
                 resolve(aquired);
             };
-            setTimeout(() => reject(new Error('timed out waiting for lock')), timeoutMs);
+
+            setTimeout(() => {
+                this.dcLockResponseCb = null;
+                reject(new Error('timed out waiting for lock'));
+            }, timeoutMs);
+
             this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
         });
     }
