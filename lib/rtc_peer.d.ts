@@ -4,6 +4,9 @@ export declare class RTCPeer extends EventEmitter {
     private config;
     private pc;
     private dc;
+    private dcNegotiated;
+    private dcNegotiationStarted;
+    private dcLockResponseCb;
     private readonly senders;
     private readonly logger;
     private enc;
@@ -22,7 +25,9 @@ export declare class RTCPeer extends EventEmitter {
     private onICECandidate;
     private onConnectionStateChange;
     private onICEConnectionStateChange;
+    private grabSignalingLock;
     private onNegotiationNeeded;
+    private makeOffer;
     private onTrack;
     private flushICECandidates;
     signal(data: string): Promise<void>;
