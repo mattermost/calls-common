@@ -5,7 +5,6 @@ export declare class RTCPeer extends EventEmitter {
     private pc;
     private dc;
     private dcNegotiated;
-    private dcNegotiationStarted;
     private dcLockResponseCb;
     private readonly senders;
     private readonly logger;
@@ -32,9 +31,9 @@ export declare class RTCPeer extends EventEmitter {
     private flushICECandidates;
     signal(data: string): Promise<void>;
     addTrack(track: MediaStreamTrack, stream: MediaStream, opts?: RTCTrackOptions): Promise<void>;
-    addStream(stream: MediaStream, opts?: RTCTrackOptions[]): void;
+    addStream(stream: MediaStream, opts?: RTCTrackOptions[]): Promise<void>;
     replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
-    removeTrack(trackID: string): void;
+    removeTrack(trackID: string): Promise<void>;
     getStats(): Promise<RTCStatsReport>;
     handleMetrics(lossRate: number, jitter: number): void;
     static getVideoCodec(mimeType: string): Promise<RTCRtpCodec | null>;

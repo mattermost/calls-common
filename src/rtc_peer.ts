@@ -12,7 +12,7 @@ const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
 const pingIntervalMs = 1000;
 const signalingLockTimeoutMs = 5000;
-const signalingLockCheckIntervalMs = 100;
+const signalingLockCheckIntervalMs = 50;
 
 enum SimulcastLevel {
     High = 'h',
@@ -33,8 +33,7 @@ export class RTCPeer extends EventEmitter {
     private pc: RTCPeerConnection | null;
     private dc: RTCDataChannel;
     private dcNegotiated = false;
-    private dcNegotiationStarted = false;
-    private dcLockResponseCb: ((aquired: boolean) => void) | null = null;
+    private dcLockResponseCb: ((acquired: boolean) => void) | null = null;
     private readonly senders: { [key: string]: RTCRtpSender[] };
     private readonly logger: Logger;
     private enc: Encoder;
@@ -166,16 +165,38 @@ export class RTCPeer extends EventEmitter {
     }
 
     private grabSignalingLock(timeoutMs: number) {
-        return new Promise<boolean>((resolve, reject) => {
-            this.dcLockResponseCb = (aquired) => {
-                this.dcLockResponseCb = null;
-                resolve(aquired);
+        const start = performance.now();
+
+        const enqueueLockMsg = () => {
+            setTimeout(() => this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock)), signalingLockCheckIntervalMs);
+        };
+
+        return new Promise<void>((resolve, reject) => {
+            this.dcLockResponseCb = (acquired) => {
+                if (acquired) {
+                    this.logger.logDebug(`RTCPeer.grabSignalingLock: lock acquired in ${Math.round(performance.now() - start)}ms`);
+                    this.dcLockResponseCb = null;
+                    resolve();
+                    return;
+                }
+
+                // If we failed to acquire the lock we wait and try again. It likely means the server side is in the
+                // process of sending us an offer (or we are).
+                enqueueLockMsg();
             };
 
             setTimeout(() => {
                 this.dcLockResponseCb = null;
                 reject(new Error('timed out waiting for lock'));
             }, timeoutMs);
+
+            // If we haven't fully negotiated the data channel or if this isn't ready yet we wait.
+            if (!this.dcNegotiated || this.dc.readyState !== 'open') {
+                this.logger.logDebug('RTCPeer.grabSignalingLock: dc not negotiated or not open, requeing');
+
+                enqueueLockMsg();
+                return;
+            }
 
             this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
         });
@@ -187,32 +208,6 @@ export class RTCPeer extends EventEmitter {
             return;
         }
 
-        // First ever negotiation is for establishing the data channel which is then used for further synchronization.
-        if (!this.dcNegotiationStarted) {
-            this.dcNegotiationStarted = true;
-            this.makeOffer();
-            return;
-        }
-
-        // If we haven't fully negotiated the data channel or if this isn't ready yet we wait.
-        if (!this.dcNegotiated || this.dc.readyState !== 'open') {
-            this.logger.logDebug('RTCPeer.onNegotiationNeeded: dc not negotiated or not open, requeing');
-            setTimeout(() => this.onNegotiationNeeded(), signalingLockCheckIntervalMs);
-            return;
-        }
-
-        const locked = await this.grabSignalingLock(signalingLockTimeoutMs);
-
-        // If we failed to acquire the lock we wait and try again. It means the server side is in the
-        // process of sending us an offer.
-        if (!locked) {
-            this.logger.logDebug('RTCPeer.onNegotiationNeeded: signaling locked not acquired, requeing');
-            setTimeout(() => this.onNegotiationNeeded(), signalingLockCheckIntervalMs);
-            return;
-        }
-
-        // Lock acquired, we can now proceed with making the offer.
-        this.logger.logDebug('RTCPeer.onNegotiationNeeded: signaling locked acquired');
         await this.makeOffer();
     }
 
@@ -355,6 +350,12 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
+        // We need to acquire a signaling lock before we can proceed with adding the track.
+        await this.grabSignalingLock(signalingLockTimeoutMs);
+
+        // Lock acquired, we can now proceed.
+        this.logger.logDebug('RTCPeer.addTrack: signaling locked acquired');
+
         let sender : RTCRtpSender;
         if (track.kind === 'video') {
             // Simulcast
@@ -388,13 +389,23 @@ export class RTCPeer extends EventEmitter {
         this.senders[track.id].push(sender);
     }
 
-    public addStream(stream: MediaStream, opts?: RTCTrackOptions[]) {
-        stream.getTracks().forEach((track, idx) => {
-            this.addTrack(track, stream, opts?.[idx]);
-        });
+    public async addStream(stream: MediaStream, opts?: RTCTrackOptions[]) {
+        for (let idx = 0; idx < stream.getTracks().length; idx++) {
+            const track = stream.getTracks()[idx];
+
+            // We actually mean to block and add them in order.
+            // eslint-disable-next-line no-await-in-loop
+            await this.addTrack(track, stream, opts?.[idx]);
+        }
     }
 
     public replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null) {
+        if (!this.pc) {
+            throw new Error('peer has been destroyed');
+        }
+
+        // Since we expect replaceTrack not to cause a re-negotiation, locking is not required.
+
         const senders = this.senders[oldTrackID];
         if (!senders) {
             throw new Error('senders for track not found');
@@ -410,10 +421,16 @@ export class RTCPeer extends EventEmitter {
         }
     }
 
-    public removeTrack(trackID: string) {
+    public async removeTrack(trackID: string) {
         if (!this.pc) {
             throw new Error('peer has been destroyed');
         }
+
+        // We need to acquire the signaling lock before we can proceed with removing the track.
+        await this.grabSignalingLock(signalingLockTimeoutMs);
+
+        // Lock acquired, we can now proceed.
+        this.logger.logDebug('RTCPeer.removeTrack: signaling locked acquired');
 
         const senders = this.senders[trackID];
         if (!senders) {
