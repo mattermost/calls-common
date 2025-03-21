@@ -204,6 +204,7 @@ export type SessionState = {
     user_id: string;
     unmuted: boolean;
     raised_hand: number;
+    video?: boolean;
 }
 
 export type UserSessionState = SessionState & {
