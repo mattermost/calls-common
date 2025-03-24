@@ -2,7 +2,7 @@ import {EventEmitter} from 'events';
 
 import {Encoder, Decoder} from '@msgpack/msgpack';
 
-import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType} from './types';
+import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType, DCMessageMediaMap} from './types';
 
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
@@ -48,6 +48,8 @@ export class RTCPeer extends EventEmitter {
     private candidates: RTCIceCandidate[] = [];
 
     public connected: boolean;
+
+    private mediaMap: DCMessageMediaMap = {};
 
     constructor(config: RTCPeerConfig) {
         super();
@@ -108,6 +110,10 @@ export class RTCPeer extends EventEmitter {
             case DCMessageType.Lock:
                 this.logger.logDebug('RTCPeer.dcHandler: received lock response', payload);
                 this.dcLockResponseCb?.(payload as boolean);
+                break;
+            case DCMessageType.MediaMap:
+                this.logger.logDebug('RTCPeer.dcHandler: received media map dc message', payload);
+                this.mediaMap = payload as DCMessageMediaMap;
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
@@ -248,18 +254,13 @@ export class RTCPeer extends EventEmitter {
             // to be 'sendrecv' so Firefox stops complaining.
             // In practice the transceiver is only ever going to be used to
             // receive.
-            for (const t of this.pc.getTransceivers()) {
-                if (t.receiver && t.receiver.track === ev.track) {
-                    if (t.direction !== 'sendrecv') {
-                        this.logger.logDebug('RTCPeer.onTrack: setting transceiver direction for track');
-                        t.direction = 'sendrecv';
-                    }
-                    break;
-                }
+            if (ev.transceiver.direction !== 'sendrecv') {
+                this.logger.logDebug('RTCPeer.onTrack: setting transceiver direction for track');
+                ev.transceiver.direction = 'sendrecv';
             }
         }
 
-        this.emit('stream', new MediaStream([ev.track]));
+        this.emit('stream', new MediaStream([ev.track]), this.mediaMap[ev.transceiver.mid!]);
     }
 
     private flushICECandidates() {
@@ -365,10 +366,15 @@ export class RTCPeer extends EventEmitter {
             // TODO: check whether track is coming from screenshare when we
             // start supporting video.
 
+            let sendEncodings = this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings;
+            if (opts?.encodings) {
+                sendEncodings = opts.encodings as RTCRtpEncodingParameters[];
+            }
+
             this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
             const trx = this.pc.addTransceiver(track, {
                 direction: 'sendonly',
-                sendEncodings: this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings,
+                sendEncodings,
                 streams: [stream!],
             });
 
