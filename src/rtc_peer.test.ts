@@ -14,8 +14,8 @@ describe('RTCPeer', () => {
 
     beforeEach(() => {
         // Setup mocks for dc_msg
-        (dcMsg.encodeDCMsg as jest.Mock).mockReturnValue(new Uint8Array([1]));
-        (dcMsg.decodeDCMsg as jest.Mock).mockImplementation(() => ({}));
+        jest.mocked(dcMsg.encodeDCMsg).mockReturnValue(new Uint8Array([1]));
+        jest.mocked(dcMsg.encodeDCMsg).mockImplementation(() => ({}));
 
         // Mock RTCPeerConnection
         mockPC = {
