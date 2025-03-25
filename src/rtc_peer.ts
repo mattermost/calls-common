@@ -249,17 +249,6 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onTrack(ev: RTCTrackEvent) {
-        if (this.pc && ev.track.kind === 'video') {
-            // We force the transceiver direction of the incoming screen track
-            // to be 'sendrecv' so Firefox stops complaining.
-            // In practice the transceiver is only ever going to be used to
-            // receive.
-            if (ev.transceiver.direction !== 'sendrecv') {
-                this.logger.logDebug('RTCPeer.onTrack: setting transceiver direction for track');
-                ev.transceiver.direction = 'sendrecv';
-            }
-        }
-
         this.emit('stream', new MediaStream([ev.track]), this.mediaMap[ev.transceiver.mid!]);
     }
 
@@ -373,7 +362,7 @@ export class RTCPeer extends EventEmitter {
 
             this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
             const trx = this.pc.addTransceiver(track, {
-                direction: 'sendonly',
+                direction: 'sendrecv',
                 sendEncodings,
                 streams: [stream!],
             });
