@@ -148,12 +148,9 @@ export type UserSessionState = SessionState & {
 export type CallState = {
     id: string;
     start_at: number;
-    users: string[];
-    states?: SessionState[];
     sessions: SessionState[];
     thread_id: string;
     post_id: string;
-    screen_sharing_id: string;
     screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
@@ -211,7 +208,6 @@ export type CallPostProps = {
     participants: string[];
     recordings: CallRecordingPropsMap;
     transcriptions: CallTranscriptionPropsMap;
-    recording_files: string[];
 };
 export type CallCaption = {
     file_id: string;

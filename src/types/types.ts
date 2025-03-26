@@ -208,20 +208,9 @@ export type UserSessionState = SessionState & {
 export type CallState = {
     id: string;
     start_at: number;
-
-    // DEPRECATED since Calls v0.21.0 - MM v9.3
-    users: string[];
-
-    // DEPRECATED since Calls v0.21.0 - MM v9.3
-    states?: SessionState[],
-
     sessions: SessionState[],
     thread_id: string;
     post_id: string;
-
-    // DEPRECATED since Calls v0.21.0 - MM v9.3
-    screen_sharing_id: string;
-
     screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
@@ -335,9 +324,6 @@ export type CallPostProps = {
     participants: string[];
     recordings: CallRecordingPropsMap,
     transcriptions: CallTranscriptionPropsMap,
-
-    // DEPRECATED
-    recording_files: string[];
 };
 
 export type CallCaption = {
