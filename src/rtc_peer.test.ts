@@ -1,6 +1,6 @@
 import {expect, describe, it, beforeEach, afterEach} from '@jest/globals';
 
-import {RTCPeer} from './rtc_peer';
+import {RTCPeer, signalingLockCheckIntervalMs} from './rtc_peer';
 import * as dcMsg from './dc_msg';
 
 // Mock the dc_msg module
@@ -104,7 +104,7 @@ describe('RTCPeer', () => {
             dcLockResponseCb(false);
 
             // Fast-forward timers to trigger the retry
-            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
             // Verify that another lock request was sent
             expect(mockDC.send).toHaveBeenCalledTimes(2);
@@ -144,7 +144,7 @@ describe('RTCPeer', () => {
             mockDC.readyState = 'open';
 
             // Fast-forward timers to trigger the retry
-            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
             // Verify that a lock request was queued
             expect(mockDC.send).toHaveBeenCalledTimes(1);
@@ -173,7 +173,7 @@ describe('RTCPeer', () => {
             peer.dcNegotiated = true;
 
             // Fast-forward timers to trigger the retry
-            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
             // Verify that a lock request was queued
             expect(mockDC.send).toHaveBeenCalledTimes(1);
@@ -201,7 +201,7 @@ describe('RTCPeer', () => {
                 dcLockResponseCb(false);
 
                 // Fast-forward timers to trigger the retry
-                jest.advanceTimersByTime(50);
+                jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
                 // Verify that another lock request was sent
                 expect(mockDC.send).toHaveBeenCalledTimes(i + 2);
@@ -234,13 +234,11 @@ describe('RTCPeer', () => {
             mockDC.readyState = 'connecting';
 
             // Try multiple times with data channel not ready
-            for (let i = 0; i < 3; i++) {
-                // Fast-forward timers to trigger the retry
-                jest.advanceTimersByTime(50);
+            // Fast-forward timers to trigger the retries
+            jest.advanceTimersByTime((signalingLockCheckIntervalMs * 3) + 10);
 
-                // Verify that no additional lock request was sent (channel not ready)
-                expect(mockDC.send).toHaveBeenCalledTimes(1);
-            }
+            // Verify that no additional lock request was sent (channel not ready)
+            expect(mockDC.send).toHaveBeenCalledTimes(1);
 
             // Now set data channel back to ready
             mockDC.readyState = 'open';
@@ -278,13 +276,13 @@ describe('RTCPeer', () => {
             mockDC.readyState = 'closed';
 
             // Fast-forward timers to trigger the retry
-            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
             // Verify that no additional lock request was sent (channel closed)
             expect(mockDC.send).toHaveBeenCalledTimes(1);
 
             // Fast-forward timers again to check if it continues trying
-            jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
 
             // Verify that no more attempts were made with closed channel
             expect(mockDC.send).toHaveBeenCalledTimes(1);
@@ -299,7 +297,7 @@ describe('RTCPeer', () => {
             expect(peer.dcLockResponseCb).toBeNull();
         });
 
-        it.only('should handle data channel that never opens and transitions to closed', async () => {
+        it('should handle data channel that never opens and transitions to closed', async () => {
             // Set data channel to connecting state initially
             mockDC.readyState = 'connecting';
 
@@ -313,12 +311,10 @@ describe('RTCPeer', () => {
             mockDC.readyState = 'closed';
 
             // Fast-forward timers multiple times to check if it continues trying
-            for (let i = 0; i < 5; i++) {
-                jest.advanceTimersByTime(50);
+            jest.advanceTimersByTime((signalingLockCheckIntervalMs * 3) + 10);
 
-                // Verify that no lock requests were sent (channel closed)
-                expect(mockDC.send).not.toHaveBeenCalled();
-            }
+            // Verify that no lock requests were sent (channel closed)
+            expect(mockDC.send).not.toHaveBeenCalled();
 
             // Fast-forward to trigger timeout
             jest.advanceTimersByTime(1000);

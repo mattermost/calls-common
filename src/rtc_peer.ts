@@ -12,7 +12,7 @@ const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
 const pingIntervalMs = 1000;
 const signalingLockTimeoutMs = 5000;
-const signalingLockCheckIntervalMs = 50;
+export const signalingLockCheckIntervalMs = 50;
 
 enum SimulcastLevel {
     High = 'h',

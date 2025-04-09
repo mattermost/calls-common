@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { RTCPeerConfig, RTCTrackOptions } from './types';
+export declare const signalingLockCheckIntervalMs = 50;
 export declare class RTCPeer extends EventEmitter {
     private config;
     private pc;
