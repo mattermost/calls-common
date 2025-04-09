@@ -12,7 +12,7 @@ const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
 const pingIntervalMs = 1000;
 const signalingLockTimeoutMs = 5000;
-const signalingLockCheckIntervalMs = 50;
+export const signalingLockCheckIntervalMs = 50;
 
 enum SimulcastLevel {
     High = 'h',
@@ -164,12 +164,27 @@ export class RTCPeer extends EventEmitter {
         this.logger.logDebug(`RTCPeer: ICE connection state change -> ${this.pc?.iceConnectionState}`);
     }
 
+    private enqueueLockMsg() {
+        setTimeout(() => {
+            if (this.dc.readyState === 'closed' || this.dc.readyState === 'closing') {
+                // Avoid requeuing if the data channel is closed or closing. This will eventually result in a timeout.
+                this.logger.logDebug('RTCPeer.enqueueLockMsg: dc closed or closing, returning');
+                return;
+            }
+
+            if (!this.dcNegotiated || this.dc.readyState !== 'open') {
+                this.logger.logDebug('RTCPeer.enqueueLockMsg: dc not negotiated or not open, requeing');
+
+                this.enqueueLockMsg();
+                return;
+            }
+
+            this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
+        }, signalingLockCheckIntervalMs);
+    }
+
     private grabSignalingLock(timeoutMs: number) {
         const start = performance.now();
-
-        const enqueueLockMsg = () => {
-            setTimeout(() => this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock)), signalingLockCheckIntervalMs);
-        };
 
         return new Promise<void>((resolve, reject) => {
             this.dcLockResponseCb = (acquired) => {
@@ -182,7 +197,7 @@ export class RTCPeer extends EventEmitter {
 
                 // If we failed to acquire the lock we wait and try again. It likely means the server side is in the
                 // process of sending us an offer (or we are).
-                enqueueLockMsg();
+                this.enqueueLockMsg();
             };
 
             setTimeout(() => {
@@ -194,7 +209,7 @@ export class RTCPeer extends EventEmitter {
             if (!this.dcNegotiated || this.dc.readyState !== 'open') {
                 this.logger.logDebug('RTCPeer.grabSignalingLock: dc not negotiated or not open, requeing');
 
-                enqueueLockMsg();
+                this.enqueueLockMsg();
                 return;
             }
 
