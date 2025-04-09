@@ -24,6 +24,7 @@ export declare class RTCPeer extends EventEmitter {
     private onICECandidate;
     private onConnectionStateChange;
     private onICEConnectionStateChange;
+    private enqueueLockMsg;
     private grabSignalingLock;
     private onNegotiationNeeded;
     private makeOffer;
