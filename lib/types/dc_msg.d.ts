@@ -6,10 +6,17 @@ export declare enum DCMessageType {
     RoundTripTime = 5,
     Jitter = 6,
     Lock = 7,
-    Unlock = 8
+    Unlock = 8,
+    MediaMap = 9
 }
 export type DCMessageSDP = Uint8Array;
 export type DCMessageLossRate = number;
 export type DCMessageRoundTripTime = number;
 export type DCMessageJitter = number;
-export type DCMessageLock = boolean;
+export type TrackInfo = {
+    type: string;
+    sender_id: string;
+};
+export type DCMessageMediaMap = {
+    [key: string]: TrackInfo;
+};
