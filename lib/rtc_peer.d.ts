@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { RTCPeerConfig, RTCTrackOptions } from './types';
+export declare const signalingLockCheckIntervalMs = 50;
 export declare class RTCPeer extends EventEmitter {
     private config;
     private pc;
@@ -25,6 +26,7 @@ export declare class RTCPeer extends EventEmitter {
     private onICECandidate;
     private onConnectionStateChange;
     private onICEConnectionStateChange;
+    private enqueueLockMsg;
     private grabSignalingLock;
     private onNegotiationNeeded;
     private makeOffer;
