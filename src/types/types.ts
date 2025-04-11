@@ -182,6 +182,27 @@ export type CallsConfig = {
 
     // Admin only
     TranscribeAPI: TranscribeAPI;
+    ICEHostOverride?: string;
+    ICEHostPortOverride?: number | null;
+    UDPServerAddress?: string;
+    TCPServerAddress?: string;
+    UDPServerPort?: number;
+    TCPServerPort?: number;
+    RTCDServiceURL?: string;
+    TURNStaticAuthSecret?: string;
+    TURNCredentialsExpirationMinutes?: number;
+    ServerSideTURN?: boolean;
+    JobServiceURL?: string;
+    RecordingQuality?: string;
+    EnableIPv6?: boolean;
+    TranscriberModelSize?: string;
+    TranscribeAPIAzureSpeechKey?: string;
+    TranscribeAPIAzureSpeechRegion?: string;
+    TranscriberNumThreads?: number;
+    LiveCaptionsModelSize?: string;
+    LiveCaptionsNumTranscribers?: number;
+    LiveCaptionsNumThreadsPerTranscriber?: number;
+    LiveCaptionsLanguage?: string;
 }
 
 export type Reaction = UserReactionData & {
