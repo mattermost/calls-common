@@ -7,7 +7,8 @@ export declare enum DCMessageType {
     Jitter = 6,
     Lock = 7,
     Unlock = 8,
-    MediaMap = 9
+    MediaMap = 9,
+    CodecSupportMap = 10
 }
 export type DCMessageSDP = Uint8Array;
 export type DCMessageLossRate = number;
@@ -19,4 +20,18 @@ export type TrackInfo = {
 };
 export type DCMessageMediaMap = {
     [key: string]: TrackInfo;
+};
+export declare enum CodecSupportLevel {
+    None = 0,
+    Partial = 1,
+    Full = 2
+}
+export declare enum CodecMimeType {
+    AV1 = "video/AV1"
+}
+export type DCMessageCodecSupportMap = {
+    [key in CodecMimeType]: CodecSupportLevel;
+};
+export declare const DCMessageCodecSupportMapDefault: {
+    "video/AV1": CodecSupportLevel;
 };

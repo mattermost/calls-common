@@ -2,7 +2,15 @@ import {EventEmitter} from 'events';
 
 import {Encoder, Decoder} from '@msgpack/msgpack';
 
-import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType, DCMessageMediaMap} from './types';
+import {
+    Logger,
+    RTCPeerConfig,
+    RTCTrackOptions,
+    DCMessageType,
+    DCMessageMediaMap,
+    DCMessageCodecSupportMap,
+    DCMessageCodecSupportMapDefault,
+} from './types';
 
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
@@ -50,6 +58,8 @@ export class RTCPeer extends EventEmitter {
     public connected: boolean;
 
     private mediaMap: DCMessageMediaMap = {};
+
+    public codecSupportMap: DCMessageCodecSupportMap = DCMessageCodecSupportMapDefault;
 
     constructor(config: RTCPeerConfig) {
         super();
@@ -114,6 +124,10 @@ export class RTCPeer extends EventEmitter {
             case DCMessageType.MediaMap:
                 this.logger.logDebug('RTCPeer.dcHandler: received media map dc message', payload);
                 this.mediaMap = payload as DCMessageMediaMap;
+                break;
+            case DCMessageType.CodecSupportMap:
+                this.logger.logDebug('RTCPeer.dcHandler: received codec support map dc message', payload);
+                this.codecSupportMap = payload as DCMessageCodecSupportMap;
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);

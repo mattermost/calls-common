@@ -1,7 +1,7 @@
 import {expect} from '@jest/globals';
 import {Encoder, Decoder} from '@msgpack/msgpack';
 
-import {DCMessageType} from './types';
+import {DCMessageType, CodecSupportLevel} from './types';
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
 describe('dcMsg', () => {
@@ -61,5 +61,20 @@ describe('dcMsg', () => {
         const {mt, payload} = decodeDCMsg(dec, unlockMsg);
         expect(mt).toEqual(DCMessageType.Unlock);
         expect(payload).toBeUndefined();
+    });
+
+    it('codecSupportMap', () => {
+        const codecSupportMap = {
+            'video/vp8': CodecSupportLevel.Full,
+            'video/vp9': CodecSupportLevel.Partial,
+            'video/h264': CodecSupportLevel.Full,
+            'video/av1': CodecSupportLevel.None,
+            'audio/opus': CodecSupportLevel.Full,
+        };
+        const codecSupportMapMsg = encodeDCMsg(enc, DCMessageType.CodecSupportMap, codecSupportMap);
+
+        const {mt, payload} = decodeDCMsg(dec, codecSupportMapMsg);
+        expect(mt).toEqual(DCMessageType.CodecSupportMap);
+        expect(payload).toEqual(codecSupportMap);
     });
 });

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { RTCPeerConfig, RTCTrackOptions } from './types';
+import { RTCPeerConfig, RTCTrackOptions, DCMessageCodecSupportMap } from './types';
 export declare const signalingLockCheckIntervalMs = 50;
 export declare class RTCPeer extends EventEmitter {
     private config;
@@ -19,6 +19,7 @@ export declare class RTCPeer extends EventEmitter {
     private candidates;
     connected: boolean;
     private mediaMap;
+    codecSupportMap: DCMessageCodecSupportMap;
     constructor(config: RTCPeerConfig);
     private dcHandler;
     private initPingHandler;
