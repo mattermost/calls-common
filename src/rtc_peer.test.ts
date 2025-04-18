@@ -1,5 +1,9 @@
 import {expect, describe, it, beforeEach, afterEach} from '@jest/globals';
 
+import {
+    DCMessageType,
+} from './types';
+
 import {RTCPeer, signalingLockCheckIntervalMs} from './rtc_peer';
 import * as dcMsg from './dc_msg';
 
@@ -324,6 +328,113 @@ describe('RTCPeer', () => {
 
             // Verify that the callback was cleared
             expect(peer.dcLockResponseCb).toBeNull();
+        });
+
+        it('should handle multiple concurrent lock attempts', async () => {
+            // Start first lock attempt
+            const firstLockPromise = peer.grabSignalingLock(1000);
+
+            // Verify that the first lock request was sent
+            expect(mockDC.send).toHaveBeenCalledTimes(1);
+
+            // Get the callback for the first attempt
+            const firstLockResponseCb = peer.dcLockResponseCb;
+            expect(firstLockResponseCb).toBeTruthy();
+
+            // Start second lock attempt before first one completes
+            const secondLockPromise = peer.grabSignalingLock(1000);
+
+            // Verify that no additional lock request was sent yet (first one still pending)
+            expect(mockDC.send).toHaveBeenCalledTimes(1);
+
+            // The callback should still be the first one
+            expect(peer.dcLockResponseCb).toBe(firstLockResponseCb);
+
+            // Resolve the first lock attempt
+            firstLockResponseCb(true);
+
+            // Wait for the first promise to resolve
+            await firstLockPromise;
+
+            // After first lock resolves, the second lock should now be attempted
+            // Fast-forward timers to allow the second lock to be processed
+            jest.advanceTimersByTime(signalingLockCheckIntervalMs + 10);
+
+            // We need to wait for the next tick.
+            await Promise.resolve();
+
+            // Verify that the second lock request was sent
+            expect(mockDC.send).toHaveBeenCalledTimes(2);
+
+            // Get the callback for the second attempt
+            const secondLockResponseCb = peer.dcLockResponseCb;
+            expect(secondLockResponseCb).toBeTruthy();
+            expect(secondLockResponseCb).not.toBe(firstLockResponseCb);
+
+            // Resolve the second lock attempt
+            secondLockResponseCb(true);
+
+            // Wait for the second promise to resolve
+            await secondLockPromise;
+
+            // Verify that the callback was cleared
+            expect(peer.dcLockResponseCb).toBeNull();
+        });
+    });
+
+    describe('unlockSignalingLock', () => {
+        it('should send unlock message when data channel is open and negotiated', () => {
+            // Setup
+            peer.dcNegotiated = true;
+            mockDC.readyState = 'open';
+
+            // Call the method
+            peer.unlockSignalingLock();
+
+            // Verify that the unlock message was sent
+            expect(mockDC.send).toHaveBeenCalledTimes(1);
+            expect(dcMsg.encodeDCMsg).toHaveBeenCalledWith(
+                peer.enc,
+                DCMessageType.Unlock,
+            );
+        });
+
+        it('should not send unlock message when data channel is not open', () => {
+            // Setup
+            peer.dcNegotiated = true;
+            mockDC.readyState = 'connecting';
+
+            // Call the method
+            peer.unlockSignalingLock();
+
+            // Verify that no message was sent
+            expect(mockDC.send).not.toHaveBeenCalled();
+        });
+
+        it('should not send unlock message when data channel is not negotiated', () => {
+            // Setup
+            peer.dcNegotiated = false;
+            mockDC.readyState = 'open';
+
+            // Call the method
+            peer.unlockSignalingLock();
+
+            // Verify that no message was sent
+            expect(mockDC.send).not.toHaveBeenCalled();
+        });
+
+        it('should log a warning when data channel is not ready', () => {
+            // Setup
+            peer.dcNegotiated = false;
+            mockDC.readyState = 'connecting';
+
+            // Call the method
+            peer.unlockSignalingLock();
+
+            // Verify that a warning was logged
+            expect(mockConfig.logger.logWarn).toHaveBeenCalledWith(
+                'RTCPeer.unlockSignalingLock: dc not negotiated or not open',
+            );
         });
     });
 });

@@ -1,7 +1,7 @@
 import {expect} from '@jest/globals';
 import {Encoder, Decoder} from '@msgpack/msgpack';
 
-import {DCMessageType, CodecSupportLevel} from './types';
+import {DCMessageType, CodecSupportLevel, CodecMimeType} from './types';
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
 describe('dcMsg', () => {
@@ -65,16 +65,62 @@ describe('dcMsg', () => {
 
     it('codecSupportMap', () => {
         const codecSupportMap = {
-            'video/vp8': CodecSupportLevel.Full,
-            'video/vp9': CodecSupportLevel.Partial,
-            'video/h264': CodecSupportLevel.Full,
-            'video/av1': CodecSupportLevel.None,
-            'audio/opus': CodecSupportLevel.Full,
+            [CodecMimeType.VP8]: CodecSupportLevel.Full,
+            [CodecMimeType.AV1]: CodecSupportLevel.Partial,
         };
         const codecSupportMapMsg = encodeDCMsg(enc, DCMessageType.CodecSupportMap, codecSupportMap);
 
         const {mt, payload} = decodeDCMsg(dec, codecSupportMapMsg);
         expect(mt).toEqual(DCMessageType.CodecSupportMap);
         expect(payload).toEqual(codecSupportMap);
+    });
+
+    it('mediaMap with empty map', () => {
+        const mediaMap = {};
+        const mediaMapMsg = encodeDCMsg(enc, DCMessageType.MediaMap, mediaMap);
+
+        const {mt, payload} = decodeDCMsg(dec, mediaMapMsg);
+        expect(mt).toEqual(DCMessageType.MediaMap);
+        expect(payload).toEqual(mediaMap);
+    });
+
+    it('mediaMap with single track', () => {
+        const mediaMap = {
+            'track-id-1': {
+                type: 'video',
+                sender_id: 'user-123',
+                mime_type: CodecMimeType.VP8,
+            },
+        };
+        const mediaMapMsg = encodeDCMsg(enc, DCMessageType.MediaMap, mediaMap);
+
+        const {mt, payload} = decodeDCMsg(dec, mediaMapMsg);
+        expect(mt).toEqual(DCMessageType.MediaMap);
+        expect(payload).toEqual(mediaMap);
+    });
+
+    it('mediaMap with multiple tracks', () => {
+        const mediaMap = {
+            'track-id-1': {
+                type: 'video',
+                sender_id: 'user-123',
+                mime_type: CodecMimeType.VP8,
+            },
+            'track-id-2': {
+                type: 'audio',
+                sender_id: 'user-123',
+                mime_type: CodecMimeType.VP8,
+            },
+            'track-id-3': {
+                type: 'video',
+                sender_id: 'user-456',
+                mime_type: CodecMimeType.AV1,
+            },
+        };
+        const mediaMapMsg = encodeDCMsg(enc, DCMessageType.MediaMap, mediaMap);
+
+        const {mt, payload} = decodeDCMsg(dec, mediaMapMsg);
+        expect(mt).toEqual(DCMessageType.MediaMap);
+        expect(payload).toEqual(mediaMap);
     });
 });
