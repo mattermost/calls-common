@@ -17,6 +17,7 @@ export type DCMessageJitter = number;
 export type TrackInfo = {
     type: string;
     sender_id: string;
+    mime_type: CodecMimeType;
 };
 export type DCMessageMediaMap = {
     [key: string]: TrackInfo;
@@ -27,11 +28,13 @@ export declare enum CodecSupportLevel {
     Full = 2
 }
 export declare enum CodecMimeType {
-    AV1 = "video/AV1"
+    AV1 = "video/AV1",
+    VP8 = "video/VP8"
 }
 export type DCMessageCodecSupportMap = {
     [key in CodecMimeType]: CodecSupportLevel;
 };
 export declare const DCMessageCodecSupportMapDefault: {
     "video/AV1": CodecSupportLevel;
+    "video/VP8": CodecSupportLevel;
 };

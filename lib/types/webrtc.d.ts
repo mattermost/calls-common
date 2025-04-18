@@ -6,6 +6,7 @@ export type RTCPeerConfig = {
     simulcast?: boolean;
     connTimeoutMs?: number;
     dcSignaling?: boolean;
+    enableAV1?: boolean;
 };
 export type SSRCStats = {
     [key: number]: {
@@ -92,6 +93,5 @@ export type RTPEncodingParameters = {
     scaleResolutionDownBy: number;
 };
 export type RTCTrackOptions = {
-    codec?: RTCRtpCodecCapability;
     encodings?: RTPEncodingParameters[];
 };
