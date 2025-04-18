@@ -8,6 +8,7 @@ export enum DCMessageType {
     Lock,
     Unlock,
     MediaMap,
+    CodecSupportMap,
 }
 
 export type DCMessageSDP = Uint8Array;
@@ -17,6 +18,21 @@ export type DCMessageJitter = number;
 export type TrackInfo = {
     type: string;
     sender_id: string;
+    mime_type: CodecMimeType;
 }
 export type DCMessageMediaMap = {[key: string]: TrackInfo};
 
+export enum CodecSupportLevel {
+    None = 0,
+    Partial = 1,
+    Full = 2,
+}
+export enum CodecMimeType {
+    AV1 = 'video/AV1',
+    VP8 = 'video/VP8',
+}
+export type DCMessageCodecSupportMap = {[key in CodecMimeType]: CodecSupportLevel}
+export const DCMessageCodecSupportMapDefault = {
+    [CodecMimeType.AV1]: CodecSupportLevel.None,
+    [CodecMimeType.VP8]: CodecSupportLevel.Full,
+};

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { RTCPeerConfig, RTCTrackOptions } from './types';
+import { RTCPeerConfig, RTCTrackOptions, DCMessageCodecSupportMap } from './types';
 export declare const signalingLockCheckIntervalMs = 50;
 export declare class RTCPeer extends EventEmitter {
     private config;
@@ -7,7 +7,7 @@ export declare class RTCPeer extends EventEmitter {
     private dc;
     private dcNegotiated;
     private dcLockResponseCb;
-    private readonly senders;
+    private readonly trackCtxs;
     private readonly logger;
     private enc;
     private dec;
@@ -19,8 +19,11 @@ export declare class RTCPeer extends EventEmitter {
     private candidates;
     connected: boolean;
     private mediaMap;
+    codecSupportMap: DCMessageCodecSupportMap;
     constructor(config: RTCPeerConfig);
     private dcHandler;
+    private switchCodecForTrack;
+    private handleCodecSupportUpdate;
     private initPingHandler;
     getRTT(): number;
     private onICECandidate;
@@ -30,12 +33,14 @@ export declare class RTCPeer extends EventEmitter {
     private grabSignalingLock;
     private onNegotiationNeeded;
     private makeOffer;
+    private unlockSignalingLock;
     private onTrack;
     private flushICECandidates;
     signal(data: string): Promise<void>;
+    private addTrackNoLock;
     addTrack(track: MediaStreamTrack, stream: MediaStream, opts?: RTCTrackOptions): Promise<void>;
     addStream(stream: MediaStream, opts?: RTCTrackOptions[]): Promise<void>;
-    replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): void;
+    replaceTrack(oldTrackID: string, newTrack: MediaStreamTrack | null): Promise<void>;
     removeTrack(trackID: string): Promise<void>;
     getStats(): Promise<RTCStatsReport>;
     handleMetrics(lossRate: number, jitter: number): void;
