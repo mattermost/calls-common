@@ -184,6 +184,11 @@ export class RTCPeer extends EventEmitter {
     }
 
     private grabSignalingLock(timeoutMs: number) {
+        // TODO: remove once we can guarantee all server side (plugin and RTCD) are updated.
+        if (!this.config.dcLocking) {
+            return Promise.resolve();
+        }
+
         const start = performance.now();
 
         return new Promise<void>((resolve, reject) => {
@@ -248,7 +253,7 @@ export class RTCPeer extends EventEmitter {
             }
         } catch (err) {
             this.emit('error', err);
-            if (this.dcNegotiated && this.dc.readyState === 'open') {
+            if (this.dcNegotiated && this.dc.readyState === 'open' && this.config.dcLocking) {
                 this.logger.logErr('RTCPeer.makeOffer: unlocking on error');
                 this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
             }
@@ -347,7 +352,7 @@ export class RTCPeer extends EventEmitter {
 
             if (!this.dcNegotiated) {
                 this.dcNegotiated = true;
-            } else if (this.dc.readyState === 'open') {
+            } else if (this.dc.readyState === 'open' && this.config.dcLocking) {
                 this.logger.logDebug('RTCPeer.signal: unlocking signaling lock');
                 this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
             } else {
@@ -365,11 +370,14 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
-        // We need to acquire a signaling lock before we can proceed with adding the track.
-        await this.grabSignalingLock(signalingLockTimeoutMs);
+        // TODO: remove once we can guarantee all server side (plugin and RTCD) are updated.
+        if (this.config.dcLocking) {
+            // We need to acquire a signaling lock before we can proceed with adding the track.
+            await this.grabSignalingLock(signalingLockTimeoutMs);
 
-        // Lock acquired, we can now proceed.
-        this.logger.logDebug('RTCPeer.addTrack: signaling locked acquired');
+            // Lock acquired, we can now proceed.
+            this.logger.logDebug('RTCPeer.addTrack: signaling locked acquired');
+        }
 
         let sender : RTCRtpSender;
         if (track.kind === 'video') {
@@ -441,11 +449,14 @@ export class RTCPeer extends EventEmitter {
             throw new Error('peer has been destroyed');
         }
 
-        // We need to acquire the signaling lock before we can proceed with removing the track.
-        await this.grabSignalingLock(signalingLockTimeoutMs);
+        // TODO: remove once we can guarantee all server side (plugin and RTCD) are updated.
+        if (this.config.dcLocking) {
+            // We need to acquire the signaling lock before we can proceed with removing the track.
+            await this.grabSignalingLock(signalingLockTimeoutMs);
 
-        // Lock acquired, we can now proceed.
-        this.logger.logDebug('RTCPeer.removeTrack: signaling locked acquired');
+            // Lock acquired, we can now proceed.
+            this.logger.logDebug('RTCPeer.removeTrack: signaling locked acquired');
+        }
 
         const senders = this.senders[trackID];
         if (!senders) {
