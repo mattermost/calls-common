@@ -130,6 +130,9 @@ describe('hasDCSignalingLockSupport', () => {
 
     it('should return true when plugin version meets minimum and rtcd_version is missing', () => {
         expect(hasDCSignalingLockSupport({version: '1.7.0'})).toBe(true);
+
+        // This is a known limitation with semver parsing (1.7.0-rc1 < 1.7.0). We can change it later if needed.
+        expect(hasDCSignalingLockSupport({version: '1.7.0-rc1'})).toBe(false);
         expect(hasDCSignalingLockSupport({version: '1.7.1'})).toBe(true);
         expect(hasDCSignalingLockSupport({version: '1.8.0'})).toBe(true);
         expect(hasDCSignalingLockSupport({version: '2.0.0'})).toBe(true);
