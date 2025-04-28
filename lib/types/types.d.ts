@@ -149,6 +149,7 @@ export type CallsConfig = {
     LiveCaptionsNumThreadsPerTranscriber?: number;
     LiveCaptionsLanguage?: string;
 };
+export declare const CallsConfigDefault: CallsConfig;
 export type Reaction = UserReactionData & {
     displayName: string;
 };

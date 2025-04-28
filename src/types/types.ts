@@ -205,6 +205,27 @@ export type CallsConfig = {
     LiveCaptionsLanguage?: string;
 }
 
+export const CallsConfigDefault: CallsConfig = {
+    ICEServers: [],
+    ICEServersConfigs: [],
+    DefaultEnabled: false,
+    MaxCallParticipants: 0,
+    NeedsTURNCredentials: false,
+    AllowScreenSharing: true,
+    EnableRecordings: false,
+    MaxRecordingDuration: 60,
+    sku_short_name: '',
+    EnableSimulcast: false,
+    EnableRinging: true,
+    EnableTranscriptions: false,
+    EnableLiveCaptions: false,
+    HostControlsAllowed: false,
+    EnableAV1: false,
+    TranscribeAPI: TranscribeAPI.WhisperCPP,
+    GroupCallsAllowed: false,
+    EnableDCSignaling: false,
+};
+
 export type Reaction = UserReactionData & {
     displayName: string;
 }
