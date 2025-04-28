@@ -3,9 +3,10 @@ import { Logger } from './types';
 export type RTCPeerConfig = {
     iceServers: RTCIceServer[];
     logger: Logger;
+    dcSignaling: boolean;
+    dcLocking: boolean;
     simulcast?: boolean;
     connTimeoutMs?: number;
-    dcSignaling?: boolean;
 };
 export type SSRCStats = {
     [key: number]: {

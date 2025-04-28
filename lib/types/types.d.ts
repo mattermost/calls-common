@@ -264,3 +264,9 @@ export type CallsClientJoinData = {
     av1Support?: boolean;
     dcSignaling?: boolean;
 };
+export type CallsVersionInfo = {
+    version?: string;
+    build?: string;
+    rtcd_version?: string;
+    rtcd_build?: string;
+};
