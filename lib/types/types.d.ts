@@ -132,6 +132,27 @@ export type CallsConfig = {
     EnableDCSignaling: boolean;
     EnableVideo: boolean;
     TranscribeAPI: TranscribeAPI;
+    ICEHostOverride?: string;
+    ICEHostPortOverride?: number | null;
+    UDPServerAddress?: string;
+    TCPServerAddress?: string;
+    UDPServerPort?: number;
+    TCPServerPort?: number;
+    RTCDServiceURL?: string;
+    TURNStaticAuthSecret?: string;
+    TURNCredentialsExpirationMinutes?: number;
+    ServerSideTURN?: boolean;
+    JobServiceURL?: string;
+    RecordingQuality?: string;
+    EnableIPv6?: boolean;
+    TranscriberModelSize?: string;
+    TranscribeAPIAzureSpeechKey?: string;
+    TranscribeAPIAzureSpeechRegion?: string;
+    TranscriberNumThreads?: number;
+    LiveCaptionsModelSize?: string;
+    LiveCaptionsNumTranscribers?: number;
+    LiveCaptionsNumThreadsPerTranscriber?: number;
+    LiveCaptionsLanguage?: string;
 };
 export type Reaction = UserReactionData & {
     displayName: string;
@@ -155,12 +176,9 @@ export type UserSessionState = SessionState & {
 export type CallState = {
     id: string;
     start_at: number;
-    users: string[];
-    states?: SessionState[];
     sessions: SessionState[];
     thread_id: string;
     post_id: string;
-    screen_sharing_id: string;
     screen_sharing_session_id: string;
     owner_id: string;
     host_id: string;
@@ -218,7 +236,6 @@ export type CallPostProps = {
     participants: string[];
     recordings: CallRecordingPropsMap;
     transcriptions: CallTranscriptionPropsMap;
-    recording_files: string[];
 };
 export type CallCaption = {
     file_id: string;
@@ -249,4 +266,10 @@ export type CallsClientJoinData = {
     jobID?: string;
     av1Support?: boolean;
     dcSignaling?: boolean;
+};
+export type CallsVersionInfo = {
+    version?: string;
+    build?: string;
+    rtcd_version?: string;
+    rtcd_build?: string;
 };

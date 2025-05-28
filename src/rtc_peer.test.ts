@@ -49,6 +49,7 @@ describe('RTCPeer', () => {
             logger: mockLogger,
             simulcast: false,
             dcSignaling: true,
+            dcLocking: true,
         };
 
         // Mock RTCPeerConnection constructor
