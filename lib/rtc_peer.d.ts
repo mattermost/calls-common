@@ -11,6 +11,7 @@ export declare class RTCPeer extends EventEmitter {
     private readonly logger;
     private enc;
     private dec;
+    private lockID;
     private pingIntervalID;
     private connTimeoutID;
     private rtt;
@@ -27,6 +28,7 @@ export declare class RTCPeer extends EventEmitter {
     private onICEConnectionStateChange;
     private enqueueLockMsg;
     private grabSignalingLock;
+    private unlockSignalingLock;
     private onNegotiationNeeded;
     private makeOffer;
     private onTrack;
