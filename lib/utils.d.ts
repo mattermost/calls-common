@@ -20,3 +20,4 @@ export declare function isVersionAtLeast(version: string | undefined, minVersion
  * @returns true if the versions support DC signaling lock, false otherwise
  */
 export declare function hasDCSignalingLockSupport(versionInfo: CallsVersionInfo): boolean;
+export declare function sleep(ms: number): Promise<unknown>;

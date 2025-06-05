@@ -81,3 +81,7 @@ export function hasDCSignalingLockSupport(versionInfo: CallsVersionInfo): boolea
     // Check RTCD version if present
     return isVersionAtLeast(versionInfo.rtcd_version, minRTCDVersion);
 }
+
+export function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

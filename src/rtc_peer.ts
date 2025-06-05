@@ -6,7 +6,7 @@ import {Logger, RTCPeerConfig, RTCTrackOptions, DCMessageType} from './types';
 
 import {encodeDCMsg, decodeDCMsg} from './dc_msg';
 
-import {isFirefox} from './utils';
+import {isFirefox, sleep} from './utils';
 
 const rtcConnFailedErr = new Error('rtc connection failed');
 const rtcConnTimeoutMsDefault = 15 * 1000;
@@ -38,6 +38,7 @@ export class RTCPeer extends EventEmitter {
     private readonly logger: Logger;
     private enc: Encoder;
     private dec: Decoder;
+    private lockID: number;
 
     private pingIntervalID: ReturnType<typeof setInterval>;
     private connTimeoutID: ReturnType<typeof setTimeout>;
@@ -57,6 +58,8 @@ export class RTCPeer extends EventEmitter {
         // We keep a map of track IDs -> RTP sender so that we can easily
         // replace tracks when muting/unmuting.
         this.senders = {};
+
+        this.lockID = 0;
 
         this.pc = new RTCPeerConnection(config);
         this.pc.onnegotiationneeded = () => this.onNegotiationNeeded();
@@ -102,12 +105,19 @@ export class RTCPeer extends EventEmitter {
             case DCMessageType.SDP:
                 this.logger.logDebug('RTCPeer.dcHandler: received sdp dc message');
                 this.signal(payload as string).catch((err) => {
-                    this.logger.logErr('RTCPeer.dcHandler: failed to signal sdp', err);
+                    this.logger.logErr('RTCPeer.dcHandler: failed to signal sdp, unlocking', err);
+                    return this.unlockSignalingLock();
                 });
                 break;
             case DCMessageType.Lock:
                 this.logger.logDebug('RTCPeer.dcHandler: received lock response', payload);
-                this.dcLockResponseCb?.(payload as boolean);
+
+                if (this.dcLockResponseCb) {
+                    this.dcLockResponseCb(payload as boolean);
+                } else {
+                    this.logger.logWarn('RTCPeer.dcHandler: received lock response but no callback set');
+                }
+
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
@@ -164,62 +174,87 @@ export class RTCPeer extends EventEmitter {
         this.logger.logDebug(`RTCPeer: ICE connection state change -> ${this.pc?.iceConnectionState}`);
     }
 
-    private enqueueLockMsg() {
+    private enqueueLockMsg(lockID: number) {
         setTimeout(() => {
             if (this.dc.readyState === 'closed' || this.dc.readyState === 'closing') {
                 // Avoid requeuing if the data channel is closed or closing. This will eventually result in a timeout.
-                this.logger.logDebug('RTCPeer.enqueueLockMsg: dc closed or closing, returning');
+                this.logger.logDebug(`RTCPeer.enqueueLockMsg(${lockID}): dc closed or closing, returning`);
                 return;
             }
 
             if (!this.dcNegotiated || this.dc.readyState !== 'open') {
-                this.logger.logDebug('RTCPeer.enqueueLockMsg: dc not negotiated or not open, requeing');
+                this.logger.logDebug(`RTCPeer.enqueueLockMsg(${lockID}): dc not negotiated or not open, requeing`);
 
-                this.enqueueLockMsg();
+                this.enqueueLockMsg(lockID);
                 return;
             }
 
+            this.logger.logDebug(`RTCPeer.enqueueLockMsg(${lockID}): sending lock request`);
             this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
         }, signalingLockCheckIntervalMs);
     }
 
     private grabSignalingLock(timeoutMs: number) {
-        // TODO: remove once we can guarantee all server side (plugin and RTCD) are updated.
-        if (!this.config.dcLocking) {
-            return Promise.resolve();
-        }
-
         const start = performance.now();
 
+        const lockID = ++this.lockID;
+        this.logger.logDebug(`RTCPeer.grabSignalingLock(${lockID}): beginning lock attempt`);
+
         return new Promise<void>((resolve, reject) => {
-            this.dcLockResponseCb = (acquired) => {
-                if (acquired) {
-                    this.logger.logDebug(`RTCPeer.grabSignalingLock: lock acquired in ${Math.round(performance.now() - start)}ms`);
+            // The attemptLock wrapper is needed since Promise executor should be synchronous.
+            const attemptLock = async () => {
+                // This covers the case of "concurrent" (interleaved in practice) attempts to lock
+                // which would otherwise result in this.dcLockResponseCb getting overwritten.
+                // Waiting ensures lock attempts are all done fully serially.
+                while (this.dcLockResponseCb) {
+                    if ((performance.now() - start) > timeoutMs) {
+                        throw new Error(`(${lockID}) timed out waiting for lock`);
+                    }
+
+                    this.logger.logDebug(`RTCPeer.grabSignalingLock(${lockID}): already waiting for lock, retrying in ${signalingLockCheckIntervalMs}ms`);
+
+                    // eslint-disable-next-line no-await-in-loop
+                    await sleep(signalingLockCheckIntervalMs);
+                }
+
+                const timeoutID = setTimeout(() => {
                     this.dcLockResponseCb = null;
-                    resolve();
+                    reject(new Error(`(${lockID}) timed out waiting for lock`));
+                }, timeoutMs);
+
+                this.dcLockResponseCb = (acquired) => {
+                    if (acquired) {
+                        this.logger.logDebug(`RTCPeer.grabSignalingLock(${lockID}): lock acquired in ${Math.round(performance.now() - start)}ms`);
+                        this.dcLockResponseCb = null;
+                        clearTimeout(timeoutID);
+                        resolve();
+                    } else {
+                        this.enqueueLockMsg(lockID);
+                    }
+                };
+
+                if (!this.dcNegotiated || this.dc.readyState !== 'open') {
+                    this.logger.logDebug(`RTCPeer.grabSignalingLock(${lockID}): dc not negotiated or not open, requeing`);
+                    this.enqueueLockMsg(lockID);
                     return;
                 }
 
-                // If we failed to acquire the lock we wait and try again. It likely means the server side is in the
-                // process of sending us an offer (or we are).
-                this.enqueueLockMsg();
+                this.logger.logDebug(`RTCPeer.grabSignalingLock(${lockID}): sending lock request`);
+                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
             };
 
-            setTimeout(() => {
-                this.dcLockResponseCb = null;
-                reject(new Error('timed out waiting for lock'));
-            }, timeoutMs);
-
-            // If we haven't fully negotiated the data channel or if this isn't ready yet we wait.
-            if (!this.dcNegotiated || this.dc.readyState !== 'open') {
-                this.logger.logDebug('RTCPeer.grabSignalingLock: dc not negotiated or not open, requeing');
-
-                this.enqueueLockMsg();
-                return;
-            }
-
-            this.dc.send(encodeDCMsg(this.enc, DCMessageType.Lock));
+            // Start the lock attempt
+            attemptLock().catch((err) => reject(err));
         });
+    }
+
+    private unlockSignalingLock() {
+        if (this.dcNegotiated && this.dc.readyState === 'open') {
+            this.logger.logDebug('RTCPeer.unlockSignalingLock: unlocking');
+            this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
+        } else {
+            this.logger.logWarn('RTCPeer.unlockSignalingLock: dc not negotiated or not open');
+        }
     }
 
     private async onNegotiationNeeded() {
@@ -255,7 +290,7 @@ export class RTCPeer extends EventEmitter {
             this.emit('error', err);
             if (this.dcNegotiated && this.dc.readyState === 'open' && this.config.dcLocking) {
                 this.logger.logErr('RTCPeer.makeOffer: unlocking on error');
-                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
+                await this.unlockSignalingLock();
             }
         } finally {
             this.makingOffer = false;
@@ -350,13 +385,15 @@ export class RTCPeer extends EventEmitter {
                 this.flushICECandidates();
             }
 
-            if (!this.dcNegotiated) {
-                this.dcNegotiated = true;
-            } else if (this.dc.readyState === 'open' && this.config.dcLocking) {
-                this.logger.logDebug('RTCPeer.signal: unlocking signaling lock');
-                this.dc.send(encodeDCMsg(this.enc, DCMessageType.Unlock));
+            if (this.dcNegotiated) {
+                if (this.dc.readyState !== 'open') {
+                    this.logger.logWarn('RTCPeer.signal: dc not open upon receiving answer');
+                }
+
+                this.logger.logDebug('RTCPeer.signal: handled remote answer, unlocking');
+                await this.unlockSignalingLock();
             } else {
-                this.logger.logWarn('RTCPeer.signal: dc not open upon receiving answer');
+                this.dcNegotiated = true;
             }
 
             break;
