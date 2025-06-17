@@ -102,6 +102,14 @@ export type RTCMonitorConfig = {
     monitorInterval: number;
 }
 
+export type RTPEncodingParameters = {
+    rid?: string;
+    maxBitrate: number;
+    maxFramerate: number;
+    scaleResolutionDownBy: number;
+}
+
 export type RTCTrackOptions = {
-    codec: RTCRtpCodecCapability;
+    codec?: RTCRtpCodecCapability;
+    encodings?: RTPEncodingParameters[];
 }
