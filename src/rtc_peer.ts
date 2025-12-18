@@ -370,9 +370,17 @@ export class RTCPeer extends EventEmitter {
 
             break;
         case 'answer':
-            await this.pc.setRemoteDescription(msg);
-            if (this.candidates.length > 0) {
-                this.flushICECandidates();
+            try {
+                await this.pc.setRemoteDescription(msg);
+                if (this.candidates.length > 0) {
+                    this.flushICECandidates();
+                }
+            } catch (err) {
+                if (this.dcNegotiated && this.config.dcLocking) {
+                    this.logger.logErr('RTCPeer.signal: exception in answer handler, unlocking', err);
+                    await this.unlockSignalingLock();
+                }
+                throw err;
             }
 
             if (this.dcNegotiated) {
@@ -406,42 +414,50 @@ export class RTCPeer extends EventEmitter {
             this.logger.logDebug('RTCPeer.addTrack: signaling locked acquired');
         }
 
-        let sender : RTCRtpSender;
-        if (track.kind === 'video') {
-            // Simulcast
+        try {
+            let sender : RTCRtpSender;
+            if (track.kind === 'video') {
+                // Simulcast
 
-            // NOTE: Unfortunately Firefox cannot simulcast screen sharing tracks
-            // properly (https://bugzilla.mozilla.org/show_bug.cgi?id=1692873).
-            // TODO: check whether track is coming from screenshare when we
-            // start supporting video.
+                // NOTE: Unfortunately Firefox cannot simulcast screen sharing tracks
+                // properly (https://bugzilla.mozilla.org/show_bug.cgi?id=1692873).
+                // TODO: check whether track is coming from screenshare when we
+                // start supporting video.
 
-            let sendEncodings = this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings;
-            if (opts?.encodings) {
-                sendEncodings = opts.encodings as RTCRtpEncodingParameters[];
+                let sendEncodings = this.config.simulcast && !isFirefox() ? DefaultSimulcastScreenEncodings : FallbackScreenEncodings;
+                if (opts?.encodings) {
+                    sendEncodings = opts.encodings as RTCRtpEncodingParameters[];
+                }
+
+                this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
+                const trx = this.pc.addTransceiver(track, {
+                    direction: 'sendrecv',
+                    sendEncodings,
+                    streams: [stream!],
+                });
+
+                if (opts?.codec && trx.setCodecPreferences) {
+                    this.logger.logDebug('setting video codec preference', opts.codec);
+                    trx.setCodecPreferences([opts.codec]);
+                }
+
+                sender = trx.sender;
+            } else {
+                sender = await this.pc.addTrack(track, stream);
             }
 
-            this.logger.logDebug('RTCPeer.addTrack: creating new transceiver on send');
-            const trx = this.pc.addTransceiver(track, {
-                direction: 'sendrecv',
-                sendEncodings,
-                streams: [stream!],
-            });
-
-            if (opts?.codec && trx.setCodecPreferences) {
-                this.logger.logDebug('setting video codec preference', opts.codec);
-                trx.setCodecPreferences([opts.codec]);
+            if (!this.senders[track.id]) {
+                this.senders[track.id] = [];
             }
 
-            sender = trx.sender;
-        } else {
-            sender = await this.pc.addTrack(track, stream);
+            this.senders[track.id].push(sender);
+        } catch (err) {
+            if (this.config.dcLocking) {
+                this.logger.logErr('RTCPeer.addTrack: exception occurred, unlocking', err);
+                await this.unlockSignalingLock();
+            }
+            throw err;
         }
-
-        if (!this.senders[track.id]) {
-            this.senders[track.id] = [];
-        }
-
-        this.senders[track.id].push(sender);
     }
 
     public async addStream(stream: MediaStream, opts?: RTCTrackOptions[]) {
@@ -490,16 +506,24 @@ export class RTCPeer extends EventEmitter {
             this.logger.logDebug('RTCPeer.removeTrack: signaling locked acquired');
         }
 
-        const senders = this.senders[trackID];
-        if (!senders) {
-            throw new Error('senders for track not found');
-        }
+        try {
+            const senders = this.senders[trackID];
+            if (!senders) {
+                throw new Error('senders for track not found');
+            }
 
-        for (const sender of senders) {
-            this.pc.removeTrack(sender);
-        }
+            for (const sender of senders) {
+                this.pc.removeTrack(sender);
+            }
 
-        delete this.senders[trackID];
+            delete this.senders[trackID];
+        } catch (err) {
+            if (this.config.dcLocking) {
+                this.logger.logErr('RTCPeer.removeTrack: exception occurred, unlocking', err);
+                await this.unlockSignalingLock();
+            }
+            throw err;
+        }
     }
 
     public getStats() {
