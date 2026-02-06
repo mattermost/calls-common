@@ -384,6 +384,7 @@ export type HostControlRemoved = HostControlMsg & {
 
 export type CallsClientJoinData = {
     channelID: string;
+    callID?: string;
     title?: string;
     threadID?: string;
 
