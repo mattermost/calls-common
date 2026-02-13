@@ -275,7 +275,22 @@ export class RTCPeer extends EventEmitter {
     private async makeOffer() {
         try {
             this.makingOffer = true;
-            await this.pc?.setLocalDescription();
+
+            let iceRestart = false;
+
+            // Check if this is a renegotiation
+            if (this.pc && this.pc.currentRemoteDescription) {
+                // If last remote was an offer, we were the answerer (CONTROLLED)
+                // Creating offer now will make us CONTROLLING, so need ICE restart
+                if (this.pc.currentRemoteDescription.type === 'offer') {
+                    iceRestart = true;
+                    this.logger.logDebug('RTCPeer.makeOffer: ICE restart needed: transitioning CONTROLLED → CONTROLLING');
+                }
+            }
+
+            // Create offer with optional ICE restart
+            const offer = await this.pc?.createOffer({iceRestart});
+            await this.pc?.setLocalDescription(offer);
 
             this.logger.logDebug('RTCPeer.makeOffer: generated local offer', JSON.stringify(this.pc?.localDescription));
 
