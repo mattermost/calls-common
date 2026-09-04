@@ -458,9 +458,9 @@ describe('RTCPeer', () => {
             expect(streamListener).not.toHaveBeenCalled();
             expect(peer.pendingTracks).toHaveLength(1);
 
-            // MediaMap arrives
-            peer.mediaMap = {[mid]: trackInfo};
-            peer.flushPendingTracks();
+            // MediaMap arrives via dcHandler
+            jest.mocked(dcMsg.decodeDCMsg).mockReturnValueOnce({mt: DCMessageType.MediaMap, payload: {[mid]: trackInfo}});
+            mockDC.onmessage({data: new ArrayBuffer(0)} as MessageEvent);
 
             expect(streamListener).toHaveBeenCalledTimes(1);
             expect(streamListener.mock.calls[0][1]).toBe(trackInfo);
