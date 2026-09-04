@@ -51,6 +51,7 @@ export class RTCPeer extends EventEmitter {
     public connected: boolean;
 
     private mediaMap: DCMessageMediaMap = {};
+    private pendingTracks: Array<{track: MediaStreamTrack; mid: string}> = [];
 
     constructor(config: RTCPeerConfig) {
         super();
@@ -124,6 +125,7 @@ export class RTCPeer extends EventEmitter {
             case DCMessageType.MediaMap:
                 this.logger.logDebug('RTCPeer.dcHandler: received media map dc message', payload);
                 this.mediaMap = payload as DCMessageMediaMap;
+                this.flushPendingTracks();
                 break;
             default:
                 this.logger.logWarn(`RTCPeer.dcHandler: unexpected dc message type ${mt}`);
@@ -304,7 +306,28 @@ export class RTCPeer extends EventEmitter {
     }
 
     private onTrack(ev: RTCTrackEvent) {
-        this.emit('stream', new MediaStream([ev.track]), this.mediaMap[ev.transceiver.mid!]);
+        const mid = ev.transceiver.mid!;
+        const trackInfo = this.mediaMap[mid];
+        if (trackInfo) {
+            this.emit('stream', new MediaStream([ev.track]), trackInfo);
+        } else {
+            this.logger.logDebug('RTCPeer.onTrack: mediaMap entry missing, buffering track', mid);
+            this.pendingTracks.push({track: ev.track, mid});
+        }
+    }
+
+    private flushPendingTracks() {
+        const remaining: Array<{track: MediaStreamTrack; mid: string}> = [];
+        for (const pt of this.pendingTracks) {
+            const trackInfo = this.mediaMap[pt.mid];
+            if (trackInfo) {
+                this.logger.logDebug('RTCPeer.flushPendingTracks: flushing buffered track', pt.mid);
+                this.emit('stream', new MediaStream([pt.track]), trackInfo);
+            } else {
+                remaining.push(pt);
+            }
+        }
+        this.pendingTracks = remaining;
     }
 
     private flushICECandidates() {
@@ -584,6 +607,7 @@ export class RTCPeer extends EventEmitter {
         this.pc = null;
         this.connected = false;
         this.candidates = [];
+        this.pendingTracks = [];
         clearInterval(this.pingIntervalID);
         clearTimeout(this.connTimeoutID);
         this.dc.onmessage = null;

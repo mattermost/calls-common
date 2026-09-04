@@ -57,6 +57,7 @@ describe('RTCPeer', () => {
 
         // Mock RTCPeerConnection constructor
         global.RTCPeerConnection = jest.fn().mockImplementation(() => mockPC);
+        global.MediaStream = jest.fn().mockImplementation((tracks) => ({getTracks: () => tracks ?? []}));
         mockPC.createDataChannel.mockReturnValue(mockDC);
 
         // Mock setInterval and setTimeout
@@ -403,6 +404,86 @@ describe('RTCPeer', () => {
 
             // Verify that the callback was cleared
             expect(peer.dcLockResponseCb).toBeNull();
+        });
+    });
+
+    describe('onTrack / flushPendingTracks', () => {
+        it('should emit stream immediately when mediaMap entry exists', () => {
+            const streamListener = jest.fn();
+            peer.on('stream', streamListener);
+
+            const mid = 'mid-0';
+            const trackInfo = {type: 'screen'};
+            peer.mediaMap = {[mid]: trackInfo};
+
+            const mockTrack = {kind: 'video'} as MediaStreamTrack;
+            const mockTransceiver = {mid} as RTCRtpTransceiver;
+            const ev = {track: mockTrack, transceiver: mockTransceiver} as RTCTrackEvent;
+
+            peer.onTrack(ev);
+
+            expect(streamListener).toHaveBeenCalledTimes(1);
+            expect(streamListener.mock.calls[0][1]).toBe(trackInfo);
+            expect(peer.pendingTracks).toHaveLength(0);
+        });
+
+        it('should buffer track when mediaMap entry is missing', () => {
+            const streamListener = jest.fn();
+            peer.on('stream', streamListener);
+
+            const mid = 'mid-0';
+            const mockTrack = {kind: 'video'} as MediaStreamTrack;
+            const mockTransceiver = {mid} as RTCRtpTransceiver;
+            const ev = {track: mockTrack, transceiver: mockTransceiver} as RTCTrackEvent;
+
+            peer.onTrack(ev);
+
+            expect(streamListener).not.toHaveBeenCalled();
+            expect(peer.pendingTracks).toHaveLength(1);
+            expect(peer.pendingTracks[0]).toEqual({track: mockTrack, mid});
+        });
+
+        it('should flush buffered tracks when mediaMap arrives via dcHandler', () => {
+            const streamListener = jest.fn();
+            peer.on('stream', streamListener);
+
+            const mid = 'mid-0';
+            const trackInfo = {type: 'screen'};
+            const mockTrack = {kind: 'video'} as MediaStreamTrack;
+            const mockTransceiver = {mid} as RTCRtpTransceiver;
+            const ev = {track: mockTrack, transceiver: mockTransceiver} as RTCTrackEvent;
+
+            // Track arrives before MediaMap
+            peer.onTrack(ev);
+            expect(streamListener).not.toHaveBeenCalled();
+            expect(peer.pendingTracks).toHaveLength(1);
+
+            // MediaMap arrives
+            peer.mediaMap = {[mid]: trackInfo};
+            peer.flushPendingTracks();
+
+            expect(streamListener).toHaveBeenCalledTimes(1);
+            expect(streamListener.mock.calls[0][1]).toBe(trackInfo);
+            expect(peer.pendingTracks).toHaveLength(0);
+        });
+
+        it('should keep tracks buffered if mediaMap entry still missing after flush', () => {
+            const streamListener = jest.fn();
+            peer.on('stream', streamListener);
+
+            const mid = 'mid-0';
+            const mockTrack = {kind: 'video'} as MediaStreamTrack;
+            const mockTransceiver = {mid} as RTCRtpTransceiver;
+            const ev = {track: mockTrack, transceiver: mockTransceiver} as RTCTrackEvent;
+
+            peer.onTrack(ev);
+
+            // MediaMap arrives but for a different MID
+            peer.mediaMap = {'mid-1': {type: 'audio'}};
+            peer.flushPendingTracks();
+
+            expect(streamListener).not.toHaveBeenCalled();
+            expect(peer.pendingTracks).toHaveLength(1);
         });
     });
 
