@@ -20,6 +20,7 @@ export declare class RTCPeer extends EventEmitter {
     private candidates;
     connected: boolean;
     private mediaMap;
+    private pendingTracks;
     constructor(config: RTCPeerConfig);
     private dcHandler;
     private initPingHandler;
@@ -33,6 +34,7 @@ export declare class RTCPeer extends EventEmitter {
     private onNegotiationNeeded;
     private makeOffer;
     private onTrack;
+    private flushPendingTracks;
     private flushICECandidates;
     signal(data: string): Promise<void>;
     addTrack(track: MediaStreamTrack, stream: MediaStream, opts?: RTCTrackOptions): Promise<void>;
