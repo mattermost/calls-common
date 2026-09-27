@@ -131,6 +131,7 @@ export type CallsConfig = {
     GroupCallsAllowed: boolean;
     EnableDCSignaling: boolean;
     EnableVideo: boolean;
+    EnableSIPOutbound: boolean;
     TranscribeAPI: TranscribeAPI;
     ICEHostOverride?: string;
     ICEHostPortOverride?: number | null;
