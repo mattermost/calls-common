@@ -185,6 +185,7 @@ export type CallsConfig = {
     GroupCallsAllowed: boolean;
     EnableDCSignaling: boolean;
     EnableVideo: boolean;
+    EnableSIPOutbound: boolean;
 
     // Admin only
     TranscribeAPI: TranscribeAPI;
