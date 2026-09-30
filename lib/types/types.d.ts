@@ -140,6 +140,7 @@ export type CallsConfig = {
     UDPServerPort?: number;
     TCPServerPort?: number;
     RTCDServiceURL?: string;
+    EnableSIPOutboundAllowlist?: boolean;
     TURNStaticAuthSecret?: string;
     TURNCredentialsExpirationMinutes?: number;
     ServerSideTURN?: boolean;
